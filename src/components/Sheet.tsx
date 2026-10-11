@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Modal, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, Modal, TouchableOpacity, Text, ScrollView, KeyboardAvoidingView } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
 type SheetProps = {
@@ -14,14 +14,17 @@ export const Sheet = ({ visible, onClose, title, children }: SheetProps) => {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={[styles.overlay, { backgroundColor: colors.overlay }]}>
+      <KeyboardAvoidingView behavior="padding" style={[styles.overlay, { backgroundColor: colors.overlay }]}>
         <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} />
         <View style={[styles.sheet, { backgroundColor: colors.background }]}>
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
           {title && <Text style={[styles.title, { color: colors.text }]}>{title}</Text>}
-          {children}
+          {/* Long forms scroll; taps on buttons work while the keyboard is open */}
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            {children}
+          </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -39,6 +42,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     padding: 24,
     minHeight: 300,
+    maxHeight: '90%',
   },
   handle: {
     width: 40,

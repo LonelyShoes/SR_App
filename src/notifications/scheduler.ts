@@ -2,6 +2,15 @@ import * as Notifications from 'expo-notifications';
 import { db } from '../db/client';
 import { meetings } from '../db/schema';
 import { eq, and, isNull, gt, inArray } from 'drizzle-orm';
+import { format } from 'date-fns';
+import { getSetting } from '../features/settings/repository';
+
+/** Spec 6.6: H-30 unless changed in Pengaturan (10/15/30/60) or per meeting. */
+export const DEFAULT_REMINDER_OFFSET_MIN = 30;
+export const REMINDER_OFFSET_CHOICES = [10, 15, 30, 60] as const;
+
+export const getDefaultReminderOffset = async () =>
+  Number(await getSetting('default_reminder_offset_min')) || DEFAULT_REMINDER_OFFSET_MIN;
 
 /**
  * Schedule a reminder notification for a meeting.
@@ -25,8 +34,9 @@ export async function scheduleMeetingReminder(
   const notificationId = await Notifications.scheduleNotificationAsync({
     content: {
       title: `Pengingat: ${title}`,
-      body: `Rapat dimulai dalam ${offsetMinutes} menit${location ? ` di ${location}` : ''}`,
-      data: { type: 'meeting-reminder', meetingId, url: `/matrix` },
+      // Spec: title, time, location. Tapping opens the meeting in Matrix.
+      body: `Mulai pukul ${format(startAt, 'HH:mm')} (${offsetMinutes} menit lagi)${location ? ` · ${location}` : ''}`,
+      data: { type: 'meeting-reminder', meetingId, url: `/matrix?rapat=${meetingId}` },
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -51,17 +61,40 @@ export async function cancelMeetingReminder(notificationId: string | null): Prom
  * Get the effective reminder offset for a meeting.
  * Returns per-meeting offset if set, otherwise the global default.
  */
-export function getEffectiveOffset(meetingOffsetMin: number | null, globalDefaultMin: number = 30): number {
+export function getEffectiveOffset(
+  meetingOffsetMin: number | null,
+  globalDefaultMin: number = DEFAULT_REMINDER_OFFSET_MIN,
+): number {
   return meetingOffsetMin ?? globalDefaultMin;
 }
 
+let reconciling: Promise<void> | null = null;
+let reconcileAgain = false;
+
 /**
- * Reconcile all meeting reminders.
- * Called on app startup, after sync, after reboot, etc.
- * - Cancel all existing scheduled meeting reminders
- * - Re-schedule reminders for all upcoming active meetings
+ * Reconcile all meeting reminders (cancel-all, then reschedule from the DB).
+ * Calls never overlap: two interleaved runs could both cancel and then both
+ * schedule, producing duplicate notifications. Calls made while a run is in
+ * progress are coalesced into one more run afterwards.
  */
-export async function reconcileMeetingReminders(globalDefaultMin: number = 30): Promise<void> {
+export function reconcileMeetingReminders(): Promise<void> {
+  if (reconciling) {
+    reconcileAgain = true;
+    return reconciling;
+  }
+  reconciling = reconcileOnce().finally(() => {
+    reconciling = null;
+    if (reconcileAgain) {
+      reconcileAgain = false;
+      reconcileMeetingReminders();
+    }
+  });
+  return reconciling;
+}
+
+async function reconcileOnce(): Promise<void> {
+  const globalDefaultMin = await getDefaultReminderOffset();
+
   // 1. Cancel all currently scheduled notifications for meeting reminders
   const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
   for (const notif of allScheduled) {
@@ -94,8 +127,8 @@ export async function reconcileMeetingReminders(globalDefaultMin: number = 30): 
       offset,
     );
 
-    // Update the meeting's reminder_notification_id
-    if (notifId) {
+    // Local-only column (not synced, does not mark the row dirty); null when no reminder is due
+    if (notifId !== meeting.reminder_notification_id) {
       await db.update(meetings).set({ reminder_notification_id: notifId }).where(eq(meetings.id, meeting.id));
     }
   }

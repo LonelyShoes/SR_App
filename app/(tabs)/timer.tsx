@@ -1,8 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { useTimerStore, TimerKind } from '../../src/features/timer/store';
-import { getPresetsQuery, TimerPreset } from '../../src/features/timer/repository';
+import { getPresetsQuery, updatePreset, TimerPreset } from '../../src/features/timer/repository';
+import { Sheet } from '../../src/components/Sheet';
+import { Button } from '../../src/components/Button';
+import { tokens } from '../../src/theme/tokens';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { router, useLocalSearchParams } from 'expo-router';
 
@@ -11,6 +14,8 @@ function formatTime(totalSeconds: number): string {
   const s = totalSeconds % 60;
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
+
+const MAX_PRESET_MIN = 180;
 
 const KIND_LABELS: Record<TimerKind, string> = {
   fokus: '🎯 Fokus',
@@ -23,12 +28,15 @@ export default function Timer() {
   const { status, kind, start, pause, resume, stop, tick, plannedSec, presetId } = useTimerStore();
   const { mulai } = useLocalSearchParams<{ mulai?: string }>();
   const { data: presets } = useLiveQuery(getPresetsQuery(), []);
-  const [pickedPreset, setPickedPreset] = useState<TimerPreset | null>(null);
+  // Keep the id, not the row, so edits to the preset are picked up
+  const [pickedPresetId, setPickedPresetId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ id: string; name: string; minutes: string } | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const [, setTickCount] = useState(0);
 
   // While a session runs, show its preset; otherwise the user's pick (default: first preset)
   const runningPreset = status !== 'idle' ? presets.find((p) => p.id === presetId) : undefined;
-  const selectedPreset = runningPreset ?? pickedPreset ?? presets[0] ?? null;
+  const selectedPreset = runningPreset ?? presets.find((p) => p.id === pickedPresetId) ?? presets[0] ?? null;
 
   // Deep link from the Quick Action widget: srapp://timer?mulai=fokus
   useEffect(() => {
@@ -59,7 +67,7 @@ export default function Timer() {
   const handleSelectPreset = useCallback(
     (preset: TimerPreset) => {
       if (status !== 'idle') return; // Can't change preset while running
-      setPickedPreset(preset);
+      setPickedPresetId(preset.id);
     },
     [status],
   );
@@ -69,7 +77,30 @@ export default function Timer() {
     await start(selectedPreset.kind as TimerKind, selectedPreset.duration_sec, selectedPreset.id);
   }, [selectedPreset, start]);
 
-  const accentColor = colors[kind] ?? colors.primary;
+  // Idle: color of the preset about to start; running: the session's kind
+  const accentKind = (status === 'idle' ? selectedPreset?.kind : kind) as TimerKind | undefined;
+  const accentColor = (accentKind && colors[accentKind]) || colors.primary;
+
+  const openEditor = () => {
+    if (!selectedPreset) return;
+    setEditError(null);
+    setEditing({
+      id: selectedPreset.id,
+      name: selectedPreset.name,
+      minutes: String(Math.round(selectedPreset.duration_sec / 60)),
+    });
+  };
+
+  const saveEditor = async () => {
+    if (!editing) return;
+    const minutes = Number(editing.minutes);
+    if (!editing.name.trim()) return setEditError('Nama tidak boleh kosong.');
+    if (!Number.isInteger(minutes) || minutes < 1 || minutes > MAX_PRESET_MIN) {
+      return setEditError(`Durasi harus 1–${MAX_PRESET_MIN} menit.`);
+    }
+    await updatePreset(editing.id, { name: editing.name.trim(), duration_sec: minutes * 60 });
+    setEditing(null);
+  };
   const progress = status === 'idle' ? 1 : remaining / plannedSec;
 
   return (
@@ -145,17 +176,62 @@ export default function Timer() {
         )}
       </View>
 
-      {/* Duration info */}
+      {/* Duration info + preset editor (spec 6.4: presets are configurable) */}
       {selectedPreset && status === 'idle' && (
-        <Text style={[styles.durationHint, { color: colors.textSecondary }]}>
-          {Math.floor(selectedPreset.duration_sec / 60)} menit
-        </Text>
+        <View style={styles.durationRow}>
+          <Text style={[styles.durationHint, { color: colors.textSecondary }]}>
+            {Math.floor(selectedPreset.duration_sec / 60)} menit
+          </Text>
+          <TouchableOpacity onPress={openEditor} accessibilityRole="button" style={styles.editBtn}>
+            <Text style={{ color: colors.primary, fontWeight: 'bold' }}>✏️ Atur preset</Text>
+          </TouchableOpacity>
+        </View>
       )}
+
+      <Sheet visible={editing !== null} onClose={() => setEditing(null)} title="Atur preset">
+        {editing && (
+          <>
+            <Text style={[styles.label, { color: colors.text }]}>Nama</Text>
+            <TextInput
+              value={editing.name}
+              onChangeText={(name) => setEditing({ ...editing, name })}
+              style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+            />
+            <Text style={[styles.label, { color: colors.text }]}>Durasi (menit)</Text>
+            <TextInput
+              value={editing.minutes}
+              onChangeText={(minutes) => setEditing({ ...editing, minutes: minutes.replace(/[^0-9]/g, '') })}
+              keyboardType="number-pad"
+              style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+            />
+            {editError && <Text style={{ color: colors.error, marginBottom: tokens.spacing.sm }}>{editError}</Text>}
+            <Button title="Simpan" onPress={saveEditor} />
+          </>
+        )}
+      </Sheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  durationRow: {
+    alignItems: 'center',
+    gap: tokens.spacing.sm,
+  },
+  editBtn: {
+    padding: tokens.spacing.sm,
+  },
+  label: {
+    ...tokens.typography.caption,
+    fontWeight: 'bold',
+    marginBottom: tokens.spacing.sm,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: tokens.borderRadius.md,
+    padding: tokens.spacing.sm + tokens.spacing.xs,
+    marginBottom: tokens.spacing.md,
+  },
   container: {
     flex: 1,
     paddingHorizontal: 16,

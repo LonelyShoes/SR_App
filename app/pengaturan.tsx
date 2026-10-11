@@ -7,8 +7,13 @@ import { ThemeMode } from '../src/theme/tokens';
 import * as Notifications from 'expo-notifications';
 import { SyncSettingsCard } from '../src/features/sync/SyncSettingsCard';
 import { BackupSettingsCard } from '../src/features/backup/BackupSettingsCard';
+import { ReminderSettingsCard } from '../src/features/meetings/ReminderSettingsCard';
 
 type PermissionStatus = 'granted' | 'denied' | 'undetermined' | 'loading';
+
+// Battery optimization list; falls back to the app's settings page if the OEM blocks the intent
+const openBatterySettings = () =>
+  Linking.sendIntent('android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS').catch(() => Linking.openSettings());
 
 export default function Pengaturan() {
   const { colors, themeMode, setThemeMode } = useTheme();
@@ -43,6 +48,10 @@ export default function Pengaturan() {
           ))}
         </View>
       </Card>
+
+      {/* Pengingat rapat */}
+      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Pengingat Rapat</Text>
+      <ReminderSettingsCard />
 
       {/* Akun & Sinkronisasi */}
       <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Akun & Sinkronisasi</Text>
@@ -84,18 +93,7 @@ export default function Pengaturan() {
           Atur app ke “Tidak dibatasi” agar timer berjalan di latar belakang.
           {'\n'}Matikan “Alihkan app yang tidak digunakan ke tidur”.
         </Text>
-        <Button title="Buka Pengaturan Baterai" onPress={() => Linking.openSettings()} variant="secondary" />
-      </Card>
-
-      {/* Pengingat Rapat */}
-      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Pengingat Rapat</Text>
-      <Card>
-        <Text style={{ color: colors.textSecondary, fontSize: 13, marginBottom: 8 }}>
-          Default pengingat: 30 menit sebelum rapat dimulai.
-        </Text>
-        <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-          (Pengaturan offset per-rapat bisa diubah saat menambah/mengedit rapat)
-        </Text>
+        <Button title="Buka Pengaturan Baterai" onPress={openBatterySettings} variant="secondary" />
       </Card>
     </ScrollView>
   );

@@ -1,224 +1,255 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
-import { useTheme } from '../../src/theme/ThemeProvider';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ScrollView } from 'react-native';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { getTasksQuery, toggleTaskStatus, createTask, softDeleteTask } from '../../src/features/tasks/repository';
-import { getMeetingsQuery, createMeeting, softDeleteMeeting } from '../../src/features/meetings/repository';
+import { format } from 'date-fns';
+import { id as localeId } from 'date-fns/locale';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useTheme } from '../../src/theme/ThemeProvider';
+import { tokens } from '../../src/theme/tokens';
 import { Card } from '../../src/components/Card';
 import { Sheet } from '../../src/components/Sheet';
 import { Button } from '../../src/components/Button';
-import { format } from 'date-fns';
-import { router, useLocalSearchParams } from 'expo-router';
+import { EmptyState } from '../../src/components/EmptyState';
+import { Task, getTasksQuery, toggleTaskStatus, updateTask } from '../../src/features/tasks/repository';
+import { Meeting, getMeetingsQuery } from '../../src/features/meetings/repository';
+import { TaskFormSheet } from '../../src/features/tasks/TaskFormSheet';
+import { MeetingFormSheet } from '../../src/features/meetings/MeetingFormSheet';
 
+type Tab = 'tugas' | 'rapat' | 'grid';
+type Quadrant = 'Q1' | 'Q2' | 'Q3' | 'Q4';
+
+const TABS: { value: Tab; label: string }[] = [
+  { value: 'tugas', label: 'Tugas' },
+  { value: 'rapat', label: 'Rapat' },
+  { value: 'grid', label: 'Grid 4Q' },
+];
+
+const QUADRANTS: { q: Quadrant; label: string }[] = [
+  { q: 'Q1', label: 'Penting & Mendesak' },
+  { q: 'Q2', label: 'Penting, Tdk Mendesak' },
+  { q: 'Q3', label: 'Tdk Penting, Mendesak' },
+  { q: 'Q4', label: 'Tdk Penting, Tdk Mendesak' },
+];
+
+const STATUS_LABEL: Record<string, string> = {
+  rencana: 'Rencana',
+  terkonfirmasi: 'Terkonfirmasi',
+  selesai: 'Selesai',
+  batal: 'Batal',
+};
+
+const formatDue = (ms: number) =>
+  format(ms, format(ms, 'HH:mm') === '23:59' ? 'd MMM' : 'd MMM, HH:mm', { locale: localeId });
+
+/**
+ * Deep links:
+ * - ?baru=tugas (Quick Action widget) opens the new-task sheet
+ * - ?rapat=<id> (meeting reminder tap) opens that meeting
+ * - ?tab=grid (Dashboard 4Q summary) opens the grid
+ */
 export default function Matrix() {
   const { colors } = useTheme();
-  const [tab, setTab] = useState<'Tugas' | 'Rapat' | 'Grid 4Q'>('Tugas');
+  const params = useLocalSearchParams<{ baru?: string; rapat?: string; tab?: Tab }>();
+  const [tab, setTab] = useState<Tab>('tugas');
 
   const { data: tasks } = useLiveQuery(getTasksQuery(), []);
   const { data: meetings } = useLiveQuery(getMeetingsQuery(), []);
 
-  // srapp://matrix?baru=tugas (Quick Action widget) opens the new-task sheet
-  const { baru } = useLocalSearchParams<{ baru?: string }>();
-  const [taskSheetOpen, setTaskSheetOpen] = useState(false);
-  const isTaskModalOpen = taskSheetOpen || baru === 'tugas';
-  const setIsTaskModalOpen = (open: boolean) => {
-    setTaskSheetOpen(open);
-    if (!open && baru) router.setParams({ baru: undefined });
+  const [taskSheet, setTaskSheet] = useState<{ open: boolean; task: Task | null }>({ open: false, task: null });
+  const [meetingSheet, setMeetingSheet] = useState<{ open: boolean; meeting: Meeting | null }>({
+    open: false,
+    meeting: null,
+  });
+  const [moving, setMoving] = useState<Task | null>(null);
+  // Snapshot of the time for the overdue highlight (render must stay pure)
+  const [now] = useState(Date.now);
+
+  // Params win until the sheet they opened is closed
+  const linkedMeeting = params.rapat ? (meetings.find((m) => m.id === params.rapat) ?? null) : null;
+  const activeTab: Tab = linkedMeeting ? 'rapat' : (params.tab ?? tab);
+  const taskSheetOpen = taskSheet.open || params.baru === 'tugas';
+  const meetingSheetOpen = meetingSheet.open || linkedMeeting !== null;
+  const editingMeeting = meetingSheet.meeting ?? linkedMeeting;
+
+  const clearParams = () => {
+    if (params.baru || params.rapat || params.tab)
+      router.setParams({ baru: undefined, rapat: undefined, tab: undefined });
   };
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskQuadrant, setNewTaskQuadrant] = useState('Q1');
-
-  const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
-  const [newMeetingTitle, setNewMeetingTitle] = useState('');
-
-  const handleSaveTask = async () => {
-    if (!newTaskTitle.trim()) return;
-    await createTask({ title: newTaskTitle, quadrant: newTaskQuadrant });
-    setNewTaskTitle('');
-    setIsTaskModalOpen(false);
+  const closeTaskSheet = () => {
+    setTaskSheet({ open: false, task: null });
+    clearParams();
   };
-
-  const handleSaveMeeting = async () => {
-    if (!newMeetingTitle.trim()) return;
-    // For simplicity, default to today + 1 hour to today + 2 hours
-    const now = new Date();
-    now.setHours(now.getHours() + 1, 0, 0, 0);
-    const end = new Date(now);
-    end.setHours(end.getHours() + 1);
-
-    await createMeeting({
-      title: newMeetingTitle,
-      start_at: now.getTime(),
-      end_at: end.getTime(),
-    });
-    setNewMeetingTitle('');
-    setIsMeetingModalOpen(false);
+  const closeMeetingSheet = () => {
+    setMeetingSheet({ open: false, meeting: null });
+    clearParams();
+  };
+  const selectTab = (t: Tab) => {
+    setTab(t);
+    clearParams();
   };
 
   const tasksTodo = tasks.filter((t) => t.status === 'todo');
+  const qColor = (q: string) => colors[q.toLowerCase() as 'q1' | 'q2' | 'q3' | 'q4'] ?? colors.primary;
 
-  const renderTask = ({ item: t }: { item: (typeof tasks)[0] }) => (
-    <Card style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <TouchableOpacity
-        onPress={() => toggleTaskStatus(t.id, t.status)}
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: 12,
-          borderWidth: 2,
-          borderColor: colors[t.quadrant.toLowerCase() as keyof typeof colors],
-          marginRight: 12,
-          backgroundColor:
-            t.status === 'done' ? colors[t.quadrant.toLowerCase() as keyof typeof colors] : 'transparent',
-        }}
-      />
-      <Text style={{ color: colors.text, flex: 1, textDecorationLine: t.status === 'done' ? 'line-through' : 'none' }}>
-        {t.title}
-      </Text>
-      <Text
-        style={{ color: colors[t.quadrant.toLowerCase() as keyof typeof colors], fontSize: 12, fontWeight: 'bold' }}
-      >
-        {t.quadrant}
-      </Text>
-      <TouchableOpacity onPress={() => softDeleteTask(t.id)} style={{ marginLeft: 8, padding: 4 }}>
-        <Text style={{ color: colors.error, fontSize: 12 }}>Hapus</Text>
-      </TouchableOpacity>
-    </Card>
+  const Check = ({ task }: { task: Task }) => (
+    <TouchableOpacity
+      onPress={() => toggleTaskStatus(task.id, task.status)}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: task.status === 'done' }}
+      accessibilityLabel={`Selesai: ${task.title}`}
+      hitSlop={8}
+      style={[
+        styles.check,
+        {
+          borderColor: qColor(task.quadrant),
+          backgroundColor: task.status === 'done' ? qColor(task.quadrant) : 'transparent',
+        },
+      ]}
+    />
   );
 
-  const renderMeeting = ({ item: m }: { item: (typeof meetings)[0] }) => (
-    <Card style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <View style={{ flex: 1 }}>
-        <Text style={{ color: colors.text, fontWeight: 'bold' }}>{m.title}</Text>
-        <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-          {format(m.start_at, 'dd MMM yyyy, HH:mm')} - {format(m.end_at, 'HH:mm')}
-        </Text>
-        <Text style={{ color: colors.primary, fontSize: 12, marginTop: 4 }}>Status: {m.status}</Text>
-      </View>
-      {m.status !== 'batal' && (
-        <TouchableOpacity onPress={() => router.push(`/notula/${m.id}`)} style={{ padding: 8 }}>
-          <Text style={{ color: colors.primary, fontSize: 12, fontWeight: 'bold' }}>Notula</Text>
-        </TouchableOpacity>
-      )}
-      <TouchableOpacity onPress={() => softDeleteMeeting(m.id)} style={{ padding: 8 }}>
-        <Text style={{ color: colors.error, fontSize: 12 }}>Hapus</Text>
-      </TouchableOpacity>
-    </Card>
+  const renderTask = ({ item: t }: { item: Task }) => (
+    <TouchableOpacity onPress={() => setTaskSheet({ open: true, task: t })} activeOpacity={0.7}>
+      <Card style={styles.row}>
+        <Check task={t} />
+        <View style={styles.flex}>
+          <Text style={{ color: colors.text }}>{t.title}</Text>
+          {t.due_at != null && (
+            <Text style={{ color: t.due_at < now ? colors.error : colors.textSecondary, ...tokens.typography.small }}>
+              Tenggat {formatDue(t.due_at)}
+            </Text>
+          )}
+        </View>
+        <Text style={{ ...tokens.typography.small, color: qColor(t.quadrant), fontWeight: 'bold' }}>{t.quadrant}</Text>
+      </Card>
+    </TouchableOpacity>
+  );
+
+  const renderMeeting = ({ item: m }: { item: Meeting }) => (
+    <TouchableOpacity onPress={() => setMeetingSheet({ open: true, meeting: m })} activeOpacity={0.7}>
+      <Card style={styles.row}>
+        <View style={styles.flex}>
+          <Text style={{ color: colors.text, fontWeight: 'bold' }}>{m.title}</Text>
+          <Text style={{ color: colors.textSecondary, ...tokens.typography.small }}>
+            {format(m.start_at, 'EEE, d MMM yyyy · HH:mm', { locale: localeId })}–{format(m.end_at, 'HH:mm')}
+            {m.location ? ` · ${m.location}` : ''}
+          </Text>
+          <Text style={{ color: m.status === 'batal' ? colors.error : colors.primary, ...tokens.typography.small }}>
+            {STATUS_LABEL[m.status] ?? m.status}
+          </Text>
+        </View>
+        {m.status !== 'batal' && (
+          <TouchableOpacity onPress={() => router.push(`/notula/${m.id}`)} style={styles.linkBtn}>
+            <Text style={{ ...tokens.typography.small, color: colors.primary, fontWeight: 'bold' }}>Notula</Text>
+          </TouchableOpacity>
+        )}
+      </Card>
+    </TouchableOpacity>
   );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Segmented Control */}
       <View style={[styles.segmented, { backgroundColor: colors.surface }]}>
-        {['Tugas', 'Rapat', 'Grid 4Q'].map((t) => (
+        {TABS.map((t) => (
           <TouchableOpacity
-            key={t}
-            style={[styles.segmentBtn, tab === t && { backgroundColor: colors.primary }]}
-            onPress={() => setTab(t as any)}
+            key={t.value}
+            style={[styles.segmentBtn, activeTab === t.value && { backgroundColor: colors.primary }]}
+            onPress={() => selectTab(t.value)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === t.value }}
           >
-            <Text style={{ color: tab === t ? colors.onPrimary : colors.text }}>{t}</Text>
+            <Text style={{ color: activeTab === t.value ? colors.onPrimary : colors.text }}>{t.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {tab === 'Tugas' && (
-        <View style={{ flex: 1 }}>
+      {activeTab === 'tugas' && (
+        <View style={styles.flex}>
           <FlatList
             data={tasksTodo}
             keyExtractor={(t) => t.id}
             renderItem={renderTask}
-            contentContainerStyle={{ padding: 16 }}
-            ListEmptyComponent={
-              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 32 }}>Belum ada tugas</Text>
-            }
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={<EmptyState title="Belum ada tugas" description="Tambahkan tugas pertama di bawah." />}
           />
-          <View style={{ padding: 16 }}>
-            <Button title="Tambah Tugas" onPress={() => setIsTaskModalOpen(true)} />
+          <View style={styles.footer}>
+            <Button title="Tambah Tugas" onPress={() => setTaskSheet({ open: true, task: null })} />
           </View>
         </View>
       )}
 
-      {tab === 'Rapat' && (
-        <View style={{ flex: 1 }}>
+      {activeTab === 'rapat' && (
+        <View style={styles.flex}>
           <FlatList
             data={meetings}
             keyExtractor={(m) => m.id}
             renderItem={renderMeeting}
-            contentContainerStyle={{ padding: 16 }}
-            ListEmptyComponent={
-              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 32 }}>
-                Belum ada rapat/agenda
-              </Text>
-            }
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={<EmptyState title="Belum ada rapat" description="Rencanakan rapat di bawah." />}
           />
-          <View style={{ padding: 16 }}>
-            <Button title="Tambah Rapat" onPress={() => setIsMeetingModalOpen(true)} />
+          <View style={styles.footer}>
+            <Button title="Tambah Rapat" onPress={() => setMeetingSheet({ open: true, meeting: null })} />
           </View>
         </View>
       )}
 
-      {tab === 'Grid 4Q' && (
-        <View style={{ flex: 1, padding: 16, gap: 8 }}>
-          <View style={styles.gridRow}>
-            <View style={[styles.quadrantBox, { backgroundColor: colors.q1 + '20', borderColor: colors.q1 }]}>
-              <Text style={{ color: colors.q1, fontWeight: 'bold' }}>Q1 (Penting & Mendesak)</Text>
-              <Text style={{ color: colors.text }}>{tasksTodo.filter((t) => t.quadrant === 'Q1').length}</Text>
+      {activeTab === 'grid' && (
+        <View style={styles.grid}>
+          {[QUADRANTS.slice(0, 2), QUADRANTS.slice(2)].map((pair, i) => (
+            <View key={i} style={styles.gridRow}>
+              {pair.map(({ q, label }) => {
+                const items = tasksTodo.filter((t) => t.quadrant === q);
+                return (
+                  <View key={q} style={[styles.quadrant, { borderColor: qColor(q), backgroundColor: colors.surface }]}>
+                    <Text style={{ color: qColor(q), fontWeight: 'bold' }}>
+                      {q} · {items.length}
+                    </Text>
+                    <Text style={{ color: colors.textSecondary, ...tokens.typography.small }}>{label}</Text>
+                    <ScrollView style={styles.flex} nestedScrollEnabled>
+                      {items.map((t) => (
+                        <TouchableOpacity
+                          key={t.id}
+                          style={styles.gridItem}
+                          onPress={() => setTaskSheet({ open: true, task: t })}
+                          onLongPress={() => setMoving(t)}
+                          accessibilityHint="Tahan untuk memindah kuadran"
+                        >
+                          <Check task={t} />
+                          <Text style={[styles.flex, { color: colors.text }]} numberOfLines={2}>
+                            {t.title}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                );
+              })}
             </View>
-            <View style={[styles.quadrantBox, { backgroundColor: colors.q2 + '20', borderColor: colors.q2 }]}>
-              <Text style={{ color: colors.q2, fontWeight: 'bold' }}>Q2 (Penting, Tdk Mendesak)</Text>
-              <Text style={{ color: colors.text }}>{tasksTodo.filter((t) => t.quadrant === 'Q2').length}</Text>
-            </View>
-          </View>
-          <View style={styles.gridRow}>
-            <View style={[styles.quadrantBox, { backgroundColor: colors.q3 + '20', borderColor: colors.q3 }]}>
-              <Text style={{ color: colors.q3, fontWeight: 'bold' }}>Q3 (Tdk Penting, Mendesak)</Text>
-              <Text style={{ color: colors.text }}>{tasksTodo.filter((t) => t.quadrant === 'Q3').length}</Text>
-            </View>
-            <View style={[styles.quadrantBox, { backgroundColor: colors.q4 + '20', borderColor: colors.q4 }]}>
-              <Text style={{ color: colors.q4, fontWeight: 'bold' }}>Q4 (Tdk Penting, Tdk Mend)</Text>
-              <Text style={{ color: colors.text }}>{tasksTodo.filter((t) => t.quadrant === 'Q4').length}</Text>
-            </View>
-          </View>
-        </View>
-      )}
-
-      <Sheet visible={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} title="Tambah Tugas Baru">
-        <TextInput
-          placeholder="Judul Tugas"
-          placeholderTextColor={colors.textSecondary}
-          value={newTaskTitle}
-          onChangeText={setNewTaskTitle}
-          style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-        />
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-          {['Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
-            <TouchableOpacity
-              key={q}
-              style={[
-                styles.qBtn,
-                {
-                  borderColor: colors.border,
-                  backgroundColor: newTaskQuadrant === q ? colors.primary : colors.surface,
-                },
-              ]}
-              onPress={() => setNewTaskQuadrant(q)}
-            >
-              <Text style={{ color: newTaskQuadrant === q ? colors.onPrimary : colors.text }}>{q}</Text>
-            </TouchableOpacity>
           ))}
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>Tahan tugas untuk memindah kuadran</Text>
         </View>
-        <Button title="Simpan Tugas" onPress={handleSaveTask} />
-      </Sheet>
+      )}
 
-      <Sheet visible={isMeetingModalOpen} onClose={() => setIsMeetingModalOpen(false)} title="Tambah Agenda Rapat">
-        <TextInput
-          placeholder="Judul Rapat (contoh: Sync Mingguan)"
-          placeholderTextColor={colors.textSecondary}
-          value={newMeetingTitle}
-          onChangeText={setNewMeetingTitle}
-          style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-        />
-        <Button title="Simpan Rapat" onPress={handleSaveMeeting} />
+      <TaskFormSheet visible={taskSheetOpen} task={taskSheet.task} onClose={closeTaskSheet} />
+      <MeetingFormSheet visible={meetingSheetOpen} meeting={editingMeeting} onClose={closeMeetingSheet} />
+
+      <Sheet visible={moving !== null} onClose={() => setMoving(null)} title="Pindah ke kuadran">
+        {moving && (
+          <View style={{ gap: tokens.spacing.sm }}>
+            <Text style={{ color: colors.textSecondary }}>{moving.title}</Text>
+            {QUADRANTS.filter(({ q }) => q !== moving.quadrant).map(({ q, label }) => (
+              <Button
+                key={q}
+                title={`${q} · ${label}`}
+                variant="secondary"
+                onPress={async () => {
+                  await updateTask(moving.id, { quadrant: q });
+                  setMoving(null);
+                }}
+              />
+            ))}
+          </View>
+        )}
       </Sheet>
     </View>
   );
@@ -228,41 +259,67 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  flex: {
+    flex: 1,
+  },
   segmented: {
     flexDirection: 'row',
-    margin: 16,
-    borderRadius: 8,
-    padding: 4,
+    margin: tokens.spacing.md,
+    borderRadius: tokens.borderRadius.md,
+    padding: tokens.spacing.xs,
   },
   segmentBtn: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: tokens.spacing.sm,
     alignItems: 'center',
-    borderRadius: 4,
+    borderRadius: tokens.borderRadius.sm,
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
+  list: {
+    paddingHorizontal: tokens.spacing.md,
+    flexGrow: 1,
   },
-  qBtn: {
+  footer: {
+    padding: tokens.spacing.md,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing.sm,
+  },
+  check: {
+    width: 24,
+    height: 24,
+    borderRadius: tokens.borderRadius.full,
+    borderWidth: 2,
+  },
+  linkBtn: {
+    padding: tokens.spacing.sm,
+  },
+  grid: {
     flex: 1,
-    padding: 8,
-    borderWidth: 1,
-    borderRadius: 8,
-    alignItems: 'center',
+    paddingHorizontal: tokens.spacing.md,
+    paddingBottom: tokens.spacing.md,
+    gap: tokens.spacing.sm,
   },
   gridRow: {
+    flex: 1,
     flexDirection: 'row',
-    gap: 8,
-    flex: 1,
+    gap: tokens.spacing.sm,
   },
-  quadrantBox: {
+  quadrant: {
     flex: 1,
-    padding: 16,
-    borderRadius: 8,
     borderWidth: 1,
+    borderRadius: tokens.borderRadius.md,
+    padding: tokens.spacing.sm,
+  },
+  gridItem: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: tokens.spacing.sm,
+    paddingVertical: tokens.spacing.xs,
+  },
+  hint: {
+    ...tokens.typography.small,
+    textAlign: 'center',
   },
 });

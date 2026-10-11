@@ -152,3 +152,25 @@
 - **Index SQLite:** migrasi `0001_add_indexes` pada kolom yang dipakai query layar, statistik, dan sync (`status`+`quadrant`, `due_at`, `completed_at`, `start_at`, `meeting_id`, `started_at`, `dirty`).
 - **Build:** semua profil EAS menghasilkan APK (spec: install langsung). Profil `production` memakai `autoIncrement` dengan versi yang dikelola EAS (`appVersionSource: remote`). Variabel Supabase diambil dari environment EAS sesuai profil.
 - **Uji E2E Supabase:** `npm run test:e2e` menjalankan mesin sync yang sama terhadap project Supabase sungguhan (RLS, trigger LWW, kursor, bucket). Test ini memakai konfigurasi Jest tanpa preset `jest-expo`, karena preset itu mengganti `fetch` sehingga request HTTP sungguhan tidak bisa jalan.
+
+## 14. Audit Spec Sebelum Rilis: Kekurangan yang Ditutup
+
+**Tanggal:** 2026-10-11
+Audit kriteria spec terhadap kode sebelum build produksi menemukan bahwa sebagian Fase 2–3 tercentang padahal belum lengkap. Kekurangan yang sudah ditutup:
+- **Matrix (6.2):**
+  - Form tugas lengkap (kuadran, tenggat tanggal/jam, catatan) dan bisa diedit/dihapus.
+  - Form rapat lengkap (tanggal, jam mulai/selesai, lokasi, peserta, agenda, status, pengingat per rapat) dan bisa diedit/dihapus. Sebelumnya jam rapat selalu "1 jam dari sekarang".
+  - Grid 4Q berisi daftar tugas yang bisa dicentang, dan tugas bisa dipindah kuadran dengan tekan lama.
+- **Dashboard (6.1):** agenda bisa ditambah/diedit lewat bottom sheet, tugas prioritas bisa diedit, dan ringkasan 4Q membuka grid (`/matrix?tab=grid`). Briefing memakai `summarizeDashboard` yang sama dengan widget.
+- **Pengingat (6.6):**
+  - Offset global 10/15/30/60 menit di Pengaturan (`default_reminder_offset_min`), mengubahnya langsung menjadwal ulang.
+  - Isi notifikasi memuat jam dan lokasi. Mengetuk notifikasi membuka rapatnya (`/matrix?rapat=<id>`).
+  - Rekonsiliasi kini berjalan berurutan, karena dua rekonsiliasi yang tumpang tindih bisa menghasilkan notifikasi ganda.
+  - `reminder_notification_id` dikosongkan bila tidak ada pengingat.
+  - Ditambah test penjadwalan ulang (aturan agent no. 8).
+- **Timer (6.4):**
+  - Preset bisa diatur (nama + durasi 1–180 menit).
+  - Warna aksen mengikuti preset terpilih.
+  - Preset disimpan sebagai ID agar perubahan durasi langsung terpakai.
+- **Input tanggal/jam** memakai teks `hh/bb/tttt` dan `JJ:mm` (`src/lib/date-input.ts`), tanpa dependency date-picker native di luar tabel stack.
+- **Keterbatasan:** status izin "Alarm & pengingat" dan pengecualian baterai tidak bisa dibaca dari JS tanpa native module. Layar Cek Kesehatan menampilkan status izin notifikasi dan tombol menuju pengaturan untuk dua izin lainnya.
