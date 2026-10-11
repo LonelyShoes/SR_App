@@ -3,7 +3,7 @@
 Dicatat 2026-10-11 setelah Fase 3. Kerjakan sebelum/saat Fase 10 (Polishing & Rilis).
 
 - [x] Konfigurasi Prettier (`npm run format`)
-- [ ] Development build via EAS (`npx eas-cli@latest build --profile development --platform android`) dan pasang di Samsung A14 5G (Fase 0)
+- [x] Development build + APK produksi (versionCode 3) dibuat di EAS; tinggal dipasang di Samsung A14 5G (lihat docs/uji-hp.md)
 - [ ] Uji bunyi alarm timer: layar mati, app ditutup/di-swipe, mode hemat baterai (Fase 3)
 - [ ] Finalkan keputusan channel vs native module di `docs/decisions.md` #1 berdasarkan hasil uji (Fase 3)
 - [x] Commit pertama + push ke github.com/LonelyShoes/SR_App (branch `main`), project EAS @whitesr/sr-app terhubung lewat `owner` + `projectId`

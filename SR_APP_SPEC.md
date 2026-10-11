@@ -347,7 +347,7 @@ Tambahkan layar **"Cek Kesehatan Notifikasi"** di Pengaturan yang menampilkan st
 - [ ] Audit performa di A14 5G, tema gelap di semua layar
 - [ ] Uji pemakaian harian minimal 5 hari (timer, pengingat, widget)
 - [x] Ikon, splash screen, nama paket
-- [ ] Build APK produksi via EAS
+- [x] Build APK produksi via EAS
 
 ---
 
