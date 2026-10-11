@@ -106,3 +106,28 @@
 - Chart dibuat dari `View` (`src/components/BarChart.tsx`), tanpa `react-native-svg` atau `react-native-gifted-charts`. Semua chart berbentuk batang, dan warnanya diambil dari tokens tema.
 - Tampilan 90 hari dikelompokkan per minggu agar batang tetap terbaca di layar ponsel.
 - Streak dihitung dari seluruh riwayat (tidak ikut filter periode), dan tetap berjalan sampai akhir hari ini walaupun hari ini belum ada sesi.
+
+## 10. Preset Timer Bawaan dengan ID Tetap
+
+**Tanggal:** 2026-10-11
+**Keputusan:** Preset bawaan memakai ID tetap (`default-fokus`, `default-rehat`, `default-santai`) dengan `updated_at = 0` dan `dirty = 0`. Ini pengecualian dari aturan "ID = UUID v4".
+
+**Alasan:** Setiap perangkat men-seed preset sendiri. Dengan UUID acak, sinkronisasi dua perangkat akan menghasilkan preset ganda. Dengan ID tetap, semua perangkat memegang baris yang sama, dan editan pengguna (`updated_at` > 0) selalu menang.
+
+## 11. Sinkronisasi Supabase
+
+**Tanggal:** 2026-10-11
+**Keputusan dan detail:**
+- **Server:** tabel sama dengan lokal ditambah `user_id` dan `server_updated_at`. Primary key `(user_id, id)` dan RLS `user_id = auth.uid()` (`supabase/migrations/`).
+- **Konflik:** last-write-wins per baris berdasarkan `updated_at` (jam perangkat), dijaga di dua sisi:
+  - Lokal: `INSERT … ON CONFLICT DO UPDATE … WHERE excluded.updated_at > updated_at`.
+  - Server: trigger `sync_lww_guard` menolak update yang lebih lama. Upsert mengembalikan versi tersimpan, sehingga klien mengambil versi server bila kalah.
+- **Keterbatasan:** jam perangkat yang salah bisa membuat editan lama menang. Untuk pemakaian satu orang dengan beberapa perangkat yang jamnya otomatis (NTP), risiko ini kecil.
+- **Kursor pull:** `(server_updated_at, id)` memakai jam server, bukan `updated_at`. Baris dari perangkat yang jamnya tertinggal tidak terlewat, dan baris dengan timestamp kembar di batas halaman juga aman.
+- **Urutan:** pull dulu, baru push. Baris lokal yang kalah sudah diganti sebelum diunggah.
+- **`dirty` hanya dihapus jika `updated_at` tidak berubah selama push**, sehingga editan di tengah push tidak hilang.
+- **Pemicu sync:** app dibuka, kembali ke foreground, perubahan data (debounce 5 detik), tombol "Sinkronkan sekarang", tugas latar belakang `expo-background-task` (tiap ±60 menit, best effort), dan retry dengan backoff eksponensial (5 detik → maksimal 5 menit). Retry ini juga menangani "koneksi kembali" tanpa dependency NetInfo.
+- **Sesi auth** disimpan di `expo-secure-store`, dipecah menjadi potongan 1800 karakter karena SecureStore membatasi 2048 byte. Tidak memakai AsyncStorage + aes-js seperti panduan resmi, sehingga tidak perlu 4 dependency tambahan.
+- **Ganti akun di perangkat yang sama:** pengguna diminta konfirmasi. Jika setuju, semua baris lokal ditandai dirty dan diunggah ke akun baru, dan kursor di-reset. Logout tidak pernah menghapus data lokal.
+- **Kunci:** hanya Project URL + publishable key lewat `EXPO_PUBLIC_*` (`.env.local`, tidak di-commit). Secret/service_role key tidak pernah ada di klien.
+- **Lampiran:** hanya metadata yang tersinkron. Unggah file ke Supabase Storage menyusul (TODO).

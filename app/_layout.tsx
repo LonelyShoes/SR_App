@@ -10,6 +10,8 @@ import { setupNotificationChannels, setupNotificationHandler } from '../src/noti
 import { reconcileMeetingReminders } from '../src/notifications/scheduler';
 import * as Notifications from 'expo-notifications';
 import { startWidgetAutoUpdate } from '../src/widgets/update';
+import { startSyncService } from '../src/features/sync/service';
+import { registerBackgroundSync, unregisterBackgroundSync } from '../src/features/sync/background';
 
 // Configure notification handler at module level (before any component renders)
 setupNotificationHandler();
@@ -25,7 +27,16 @@ export default function Layout() {
       // Reconcile meeting reminders on app startup
       reconcileMeetingReminders();
       // Keep the home-screen Dashboard widget in sync with task/meeting changes
-      return startWidgetAutoUpdate();
+      const stopWidgets = startWidgetAutoUpdate();
+      // Optional cloud sync (no-op until Supabase is configured and the user signs in)
+      const stopSync = startSyncService({
+        onSignedIn: () => registerBackgroundSync().catch((e) => console.warn('Background sync:', e)),
+        onSignedOut: () => unregisterBackgroundSync().catch((e) => console.warn('Background sync:', e)),
+      });
+      return () => {
+        stopWidgets();
+        stopSync();
+      };
     }
   }, [success]);
 

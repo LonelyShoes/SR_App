@@ -5,11 +5,12 @@ import { Button } from '../src/components/Button';
 import { Card } from '../src/components/Card';
 import { ThemeMode } from '../src/theme/tokens';
 import * as Notifications from 'expo-notifications';
+import { SyncSettingsCard } from '../src/features/sync/SyncSettingsCard';
 
 type PermissionStatus = 'granted' | 'denied' | 'undetermined' | 'loading';
 
 export default function Pengaturan() {
-  const { colors, mode, setThemeMode } = useTheme();
+  const { colors, themeMode, setThemeMode } = useTheme();
   const [notifStatus, setNotifStatus] = useState<PermissionStatus>('loading');
 
   useEffect(() => {
@@ -34,13 +35,17 @@ export default function Pengaturan() {
             <View key={t} style={styles.btnWrapper}>
               <Button
                 title={t === 'system' ? '🖥 Sistem' : t === 'light' ? '☀️ Terang' : '🌙 Gelap'}
-                variant={mode === t || (t === 'system' && mode !== 'light' && mode !== 'dark') ? 'primary' : 'secondary'}
+                variant={themeMode === t ? 'primary' : 'secondary'}
                 onPress={() => setThemeMode(t)}
               />
             </View>
           ))}
         </View>
       </Card>
+
+      {/* Akun & Sinkronisasi */}
+      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Akun & Sinkronisasi</Text>
+      <SyncSettingsCard />
 
       {/* Cek Kesehatan Notifikasi */}
       <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>

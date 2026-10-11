@@ -333,9 +333,9 @@ Tambahkan layar **"Cek Kesehatan Notifikasi"** di Pengaturan yang menampilkan st
 - [x] Chart mengikuti tema gelap
 
 ### Fase 8: Sinkronisasi Cloud
-- [ ] Project Supabase, tabel + RLS, Auth
-- [ ] Push/pull + resolusi konflik + indikator status
-- [ ] Rekonsiliasi notifikasi setelah pull
+- [ ] Project Supabase, tabel + RLS, Auth (kode + SQL siap; menunggu project dibuat, lihat docs/supabase-setup.md)
+- [x] Push/pull + resolusi konflik + indikator status
+- [x] Rekonsiliasi notifikasi setelah pull
 - [ ] Uji dua perangkat/dua akun, uji offline lalu online
 
 ### Fase 9: Backup Otomatis

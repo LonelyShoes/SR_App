@@ -29,6 +29,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     'expo-sqlite',
     'expo-sharing',
+    'expo-secure-store',
+    'expo-background-task',
     [
       'react-native-android-widget',
       {
