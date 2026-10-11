@@ -7,22 +7,22 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   owner: 'whitesr',
   version: '1.0.0',
   orientation: 'portrait',
-  icon: './assets/images/sr-logo.jpg',
+  icon: './assets/images/icon.png',
   scheme: 'srapp',
   userInterfaceStyle: 'automatic',
   android: {
     package: 'com.srapp.app',
+    // Icons generated from assets/images/sr-logo.jpg (glyph kept inside the adaptive-icon safe zone)
     adaptiveIcon: {
-      backgroundColor: '#E6F4FE',
+      backgroundColor: '#FFFFFF',
       foregroundImage: './assets/images/android-icon-foreground.png',
-      backgroundImage: './assets/images/android-icon-background.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
     permissions: [
       'android.permission.POST_NOTIFICATIONS',
       'android.permission.SCHEDULE_EXACT_ALARM',
-      'android.permission.RECORD_AUDIO'
+      'android.permission.RECORD_AUDIO',
     ],
   },
   plugins: [
@@ -71,15 +71,22 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-notifications',
       {
-        color: '#208AEF',
+        // Small status-bar icon must be white on transparent
+        icon: './assets/images/notification-icon.png',
+        color: '#1A6FC9', // tokens.colors.light.primary
       },
     ],
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#208AEF',
+        // Matches tokens background/glyph for light and dark system themes
+        backgroundColor: '#FFFFFF',
         image: './assets/images/splash-icon.png',
-        imageWidth: 76,
+        imageWidth: 160,
+        dark: {
+          backgroundColor: '#121212',
+          image: './assets/images/splash-icon-dark.png',
+        },
       },
     ],
   ],

@@ -58,10 +58,12 @@ export function BackupSettingsCard() {
               title="Backup ke cloud sekarang"
               loading={busy === 'cloud'}
               disabled={busy !== null}
-              onPress={() => run('cloud', async () => {
-                await backupToCloud();
-                Alert.alert('Backup selesai', 'Data tersimpan di cloud.');
-              })}
+              onPress={() =>
+                run('cloud', async () => {
+                  await backupToCloud();
+                  Alert.alert('Backup selesai', 'Data tersimpan di cloud.');
+                })
+              }
             />
             <Button title="Pulihkan dari cloud" variant="secondary" onPress={() => router.push('/pulihkan')} />
           </>
@@ -78,10 +80,12 @@ export function BackupSettingsCard() {
           variant="secondary"
           loading={busy === 'import'}
           disabled={busy !== null}
-          onPress={() => run('import', async () => {
-            const snapshot = await pickBackupFile();
-            if (snapshot) confirmRestore(snapshot);
-          })}
+          onPress={() =>
+            run('import', async () => {
+              const snapshot = await pickBackupFile();
+              if (snapshot) confirmRestore(snapshot);
+            })
+          }
         />
       </View>
     </Card>

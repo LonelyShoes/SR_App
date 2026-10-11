@@ -36,18 +36,31 @@ const WEEKDAYS: Record<string, number> = {
 };
 
 const MONTHS: Record<string, number> = {
-  januari: 0, jan: 0,
-  februari: 1, feb: 1,
-  maret: 2, mar: 2,
-  april: 3, apr: 3,
+  januari: 0,
+  jan: 0,
+  februari: 1,
+  feb: 1,
+  maret: 2,
+  mar: 2,
+  april: 3,
+  apr: 3,
   mei: 4,
-  juni: 5, jun: 5,
-  juli: 6, jul: 6,
-  agustus: 7, agu: 7, agt: 7,
-  september: 8, sept: 8, sep: 8,
-  oktober: 9, okt: 9,
-  november: 10, nov: 10,
-  desember: 11, des: 11,
+  juni: 5,
+  jun: 5,
+  juli: 6,
+  jul: 6,
+  agustus: 7,
+  agu: 7,
+  agt: 7,
+  september: 8,
+  sept: 8,
+  sep: 8,
+  oktober: 9,
+  okt: 9,
+  november: 10,
+  nov: 10,
+  desember: 11,
+  des: 11,
 };
 
 // Speech recognizers sometimes spell out small numbers
@@ -78,8 +91,7 @@ const toNumber = (value: string) => NUMBER_WORDS[value] ?? Number(value);
 
 const atStartOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-const addDays = (date: Date, days: number) =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+const addDays = (date: Date, days: number) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 
 /** Build a date only if day/month exist (rejects e.g. 31 November). */
 const safeDate = (year: number, month: number, day: number): Date | null => {
@@ -165,11 +177,7 @@ const parseDay = (text: string, now: Date, spans: Span[]): { date: Date | null; 
   return { date: null, period: null };
 };
 
-const parseTime = (
-  text: string,
-  dayPeriod: Period | null,
-  spans: Span[],
-): { hour: number; minute: number } | null => {
+const parseTime = (text: string, dayPeriod: Period | null, spans: Span[]): { hour: number; minute: number } | null => {
   // setengah N → (N-1):30
   const half = new RegExp(`\\b(?:(?:jam|pukul|pkl\\.?)\\s+)?setengah\\s+${NUM}\\b(?:\\s+${PERIOD}\\b)?`).exec(text);
   if (half) {

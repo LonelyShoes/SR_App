@@ -3,7 +3,11 @@ import * as Sharing from 'expo-sharing';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import type { Meeting } from '../meetings/repository';
+import { tokens } from '../../theme/tokens';
 import type { MinuteInput } from './repository';
+
+// PDF is always light (spec 6.8)
+const pdfColors = tokens.colors.light;
 
 const escapeHtml = (value: string) =>
   value
@@ -14,8 +18,7 @@ const escapeHtml = (value: string) =>
     .replace(/'/g, '&#39;');
 
 // Keep line breaks typed in multiline inputs
-const paragraph = (value: string) =>
-  value.trim() ? escapeHtml(value).replace(/\n/g, '<br/>') : '<em>-</em>';
+const paragraph = (value: string) => (value.trim() ? escapeHtml(value).replace(/\n/g, '<br/>') : '<em>-</em>');
 
 export const buildMinutesHtml = (meeting: Meeting, minute: MinuteInput): string => {
   const date = format(meeting.start_at, 'EEEE, d MMMM yyyy', { locale: localeId });
@@ -50,13 +53,13 @@ export const buildMinutesHtml = (meeting: Meeting, minute: MinuteInput): string 
 <meta charset="utf-8" />
 <style>
   @page { margin: 32px; }
-  body { font-family: sans-serif; color: #1A1A1A; font-size: 12pt; line-height: 1.5; }
+  body { font-family: sans-serif; color: ${pdfColors.text}; font-size: 12pt; line-height: 1.5; }
   h1 { font-size: 18pt; margin: 0 0 4px; }
-  h2 { font-size: 13pt; margin: 20px 0 6px; border-bottom: 1px solid #E0E0E0; padding-bottom: 4px; }
-  .meta { color: #666666; margin: 0; }
+  h2 { font-size: 13pt; margin: 20px 0 6px; border-bottom: 1px solid ${pdfColors.border}; padding-bottom: 4px; }
+  .meta { color: ${pdfColors.textSecondary}; margin: 0; }
   table { width: 100%; border-collapse: collapse; }
-  th, td { border: 1px solid #E0E0E0; padding: 6px 8px; text-align: left; vertical-align: top; }
-  th { background: #F5F5F5; }
+  th, td { border: 1px solid ${pdfColors.border}; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: ${pdfColors.surface}; }
 </style>
 </head>
 <body>

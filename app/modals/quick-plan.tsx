@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { tokens } from '../../src/theme/tokens';
@@ -55,7 +47,7 @@ export default function QuickPlan() {
     styles.segmentBtn,
     { borderColor: colors.border, backgroundColor: active ? colors.primary : colors.surface },
   ];
-  const segmentText = (active: boolean) => ({ color: active ? '#FFF' : colors.text });
+  const segmentText = (active: boolean) => ({ color: active ? colors.onPrimary : colors.text });
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior="height">
@@ -72,7 +64,9 @@ export default function QuickPlan() {
           accessibilityRole="button"
           accessibilityLabel={speech.listening ? 'Berhenti merekam' : 'Mulai merekam'}
         >
-          <Text style={styles.micIcon}>{speech.listening ? '■' : '🎤'}</Text>
+          <Text style={[styles.micIcon, { color: speech.listening ? colors.onError : colors.onPrimary }]}>
+            {speech.listening ? '■' : '🎤'}
+          </Text>
         </TouchableOpacity>
         <Text style={[styles.hint, { color: colors.textSecondary }]}>
           {speech.listening
@@ -142,7 +136,11 @@ export default function QuickPlan() {
                 <Text style={[styles.label, { color: colors.text }]}>Kuadran</Text>
                 <View style={styles.row}>
                   {QUADRANTS.map((q) => (
-                    <TouchableOpacity key={q} style={segment(form.quadrant === q)} onPress={() => update({ quadrant: q })}>
+                    <TouchableOpacity
+                      key={q}
+                      style={segment(form.quadrant === q)}
+                      onPress={() => update({ quadrant: q })}
+                    >
                       <Text style={segmentText(form.quadrant === q)}>{q}</Text>
                     </TouchableOpacity>
                   ))}
@@ -151,7 +149,11 @@ export default function QuickPlan() {
             )}
 
             {saveError && <Text style={[styles.hint, { color: colors.error }]}>{saveError}</Text>}
-            <Button title={form.kind === 'task' ? 'Simpan Tugas' : 'Simpan Rapat'} onPress={handleSave} loading={saving} />
+            <Button
+              title={form.kind === 'task' ? 'Simpan Tugas' : 'Simpan Rapat'}
+              onPress={handleSave}
+              loading={saving}
+            />
           </Card>
         )}
       </ScrollView>
@@ -175,7 +177,6 @@ const styles = StyleSheet.create({
   },
   micIcon: {
     fontSize: 36,
-    color: '#FFF',
   },
   hint: {
     ...tokens.typography.caption,

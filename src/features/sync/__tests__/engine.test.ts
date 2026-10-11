@@ -27,7 +27,9 @@ const table = (name: string) => SYNC_TABLES.find((t) => t.name === name)!;
 /** A device: real SQLite schema from the Drizzle migrations. */
 const createDevice = (): SqlExecutor & { raw: DatabaseSync } => {
   const raw = new DatabaseSync(':memory:');
-  for (const file of readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql')).sort()) {
+  for (const file of readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith('.sql'))
+    .sort()) {
     for (const statement of readFileSync(join(MIGRATIONS_DIR, file), 'utf8').split('--> statement-breakpoint')) {
       if (statement.trim()) raw.exec(statement);
     }
@@ -68,10 +70,7 @@ class FakeServer implements SyncRemote {
   async pull(name: string, cursor: Cursor | null, limit: number) {
     return [...this.store(name).values()]
       .filter(
-        (r) =>
-          !cursor ||
-          r.server_updated_at! > cursor.at ||
-          (r.server_updated_at === cursor.at && r.id > cursor.id),
+        (r) => !cursor || r.server_updated_at! > cursor.at || (r.server_updated_at === cursor.at && r.id > cursor.id),
       )
       .sort((a, b) => a.server_updated_at!.localeCompare(b.server_updated_at!) || a.id.localeCompare(b.id))
       .slice(0, limit);
@@ -83,10 +82,27 @@ class FakeServer implements SyncRemote {
   }
 }
 
-const insertTask = (db: ReturnType<typeof createDevice>, id: string, updatedAt: number, extra: Record<string, SqlParam> = {}) => {
-  const row = { id, title: `Tugas ${id}`, quadrant: 'Q1', status: 'todo', source: 'manual', created_at: 1, updated_at: updatedAt, dirty: 1, ...extra };
+const insertTask = (
+  db: ReturnType<typeof createDevice>,
+  id: string,
+  updatedAt: number,
+  extra: Record<string, SqlParam> = {},
+) => {
+  const row = {
+    id,
+    title: `Tugas ${id}`,
+    quadrant: 'Q1',
+    status: 'todo',
+    source: 'manual',
+    created_at: 1,
+    updated_at: updatedAt,
+    dirty: 1,
+    ...extra,
+  };
   const cols = Object.keys(row);
-  db.raw.prepare(`INSERT INTO tasks (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`).run(...(Object.values(row) as SqlParam[]));
+  db.raw
+    .prepare(`INSERT INTO tasks (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`)
+    .run(...(Object.values(row) as SqlParam[]));
 };
 
 const getTask = (db: ReturnType<typeof createDevice>, id: string) =>
@@ -219,9 +235,20 @@ describe('pull', () => {
       )
       .run();
     server.write('meetings', {
-      user_id: USER, id: 'm1', title: 'Baru', start_at: 1, end_at: 2, location: null,
-      participants: ['Ani'], agenda: null, status: 'terkonfirmasi', source: 'manual',
-      reminder_offset_min: null, created_at: 1, updated_at: 200, deleted_at: null,
+      user_id: USER,
+      id: 'm1',
+      title: 'Baru',
+      start_at: 1,
+      end_at: 2,
+      location: null,
+      participants: ['Ani'],
+      agenda: null,
+      status: 'terkonfirmasi',
+      source: 'manual',
+      reminder_offset_min: null,
+      created_at: 1,
+      updated_at: 200,
+      deleted_at: null,
     });
     await pullTable(device, server, table('meetings'), null);
     const row = device.raw.prepare('SELECT * FROM meetings WHERE id = ?').get('m1') as Record<string, SqlParam>;
@@ -276,8 +303,20 @@ describe('syncAll', () => {
 
   test('melaporkan tabel yang berubah karena data remote (untuk rekonsiliasi notifikasi)', async () => {
     server.write('meetings', {
-      user_id: USER, id: 'm1', title: 'Rapat', start_at: 1, end_at: 2, location: null, participants: null,
-      agenda: null, status: 'rencana', source: 'manual', reminder_offset_min: null, created_at: 1, updated_at: 1, deleted_at: null,
+      user_id: USER,
+      id: 'm1',
+      title: 'Rapat',
+      start_at: 1,
+      end_at: 2,
+      location: null,
+      participants: null,
+      agenda: null,
+      status: 'rencana',
+      source: 'manual',
+      reminder_offset_min: null,
+      created_at: 1,
+      updated_at: 1,
+      deleted_at: null,
     });
     const res = await syncAll(device, server, USER, {});
     expect([...res.changedTables]).toEqual(['meetings']);
@@ -299,7 +338,10 @@ describe('syncAll', () => {
 
     await syncAll(a, server, USER, {});
     await syncAll(b, server, USER, {});
-    expect(b.raw.prepare('SELECT COUNT(*) AS n, MAX(duration_sec) AS d FROM timer_presets').get()).toEqual({ n: 1, d: 3000 });
+    expect(b.raw.prepare('SELECT COUNT(*) AS n, MAX(duration_sec) AS d FROM timer_presets').get()).toEqual({
+      n: 1,
+      d: 3000,
+    });
   });
 
   test('markAllDirty menandai semua baris untuk diunggah ulang', async () => {

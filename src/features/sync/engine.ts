@@ -129,10 +129,7 @@ export const pushTable = async (
         if (await applyRemoteRow(db, table, serverRow)) changed++;
       } else if (serverRow) {
         // Only clear if not edited again while we were pushing
-        await db.run(`UPDATE ${table.name} SET dirty = 0 WHERE id = ? AND updated_at = ?`, [
-          row.id,
-          row.updated_at,
-        ]);
+        await db.run(`UPDATE ${table.name} SET dirty = 0 WHERE id = ? AND updated_at = ?`, [row.id, row.updated_at]);
       }
     }
     pushed += rows.length;

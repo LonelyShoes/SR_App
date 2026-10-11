@@ -31,11 +31,7 @@ export const draftToForm = (draft: QuickPlanDraft, now: Date = new Date()): Quic
   quadrant: draft.date && draft.date.getTime() - now.getTime() <= DAY_MS ? 'Q1' : 'Q2',
 });
 
-const parseDateTime = (
-  dateText: string,
-  timeText: string,
-  defaultTime: { hour: number; minute: number },
-) => {
+const parseDateTime = (dateText: string, timeText: string, defaultTime: { hour: number; minute: number }) => {
   const date = parse(dateText.trim(), DATE_FORMAT, new Date());
   if (!isValid(date)) return null;
   if (!timeText.trim()) {

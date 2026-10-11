@@ -10,7 +10,9 @@ export const getTasksQuery = () => {
   return db.select().from(tasks).where(isNull(tasks.deleted_at)).orderBy(desc(tasks.created_at));
 };
 
-export const createTask = async (data: Omit<TaskInsert, 'id' | 'created_at' | 'updated_at' | 'dirty' | 'status'> & { status?: string }) => {
+export const createTask = async (
+  data: Omit<TaskInsert, 'id' | 'created_at' | 'updated_at' | 'dirty' | 'status'> & { status?: string },
+) => {
   const now = Date.now();
   const id = Crypto.randomUUID();
   await db.insert(tasks).values({
@@ -24,7 +26,10 @@ export const createTask = async (data: Omit<TaskInsert, 'id' | 'created_at' | 'u
   return id;
 };
 
-export const updateTask = async (id: string, data: Partial<Omit<TaskInsert, 'id' | 'created_at' | 'updated_at' | 'dirty'>>) => {
+export const updateTask = async (
+  id: string,
+  data: Partial<Omit<TaskInsert, 'id' | 'created_at' | 'updated_at' | 'dirty'>>,
+) => {
   const now = Date.now();
   await db
     .update(tasks)

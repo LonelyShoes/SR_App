@@ -11,25 +11,22 @@ type ButtonProps = {
 };
 
 export const Button = ({ title, onPress, variant = 'primary', loading, disabled }: ButtonProps) => {
-  const { colors, mode } = useTheme();
+  const { colors } = useTheme();
 
   let backgroundColor = colors.primary;
-  let textColor = mode === 'light' ? '#FFFFFF' : '#000000';
+  let textColor = colors.onPrimary;
 
   if (variant === 'secondary') {
     backgroundColor = colors.surface;
     textColor = colors.text;
   } else if (variant === 'danger') {
     backgroundColor = colors.error;
-    textColor = '#FFFFFF';
+    textColor = colors.onError;
   }
 
   return (
     <TouchableOpacity
-      style={[
-        styles.button,
-        { backgroundColor: disabled ? colors.border : backgroundColor },
-      ]}
+      style={[styles.button, { backgroundColor: disabled ? colors.border : backgroundColor }]}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}

@@ -16,7 +16,7 @@ export default function Matrix() {
 
   const { data: tasks } = useLiveQuery(getTasksQuery(), []);
   const { data: meetings } = useLiveQuery(getMeetingsQuery(), []);
-  
+
   // srapp://matrix?baru=tugas (Quick Action widget) opens the new-task sheet
   const { baru } = useLocalSearchParams<{ baru?: string }>();
   const [taskSheetOpen, setTaskSheetOpen] = useState(false);
@@ -46,32 +46,47 @@ export default function Matrix() {
     const end = new Date(now);
     end.setHours(end.getHours() + 1);
 
-    await createMeeting({ 
-      title: newMeetingTitle, 
-      start_at: now.getTime(), 
+    await createMeeting({
+      title: newMeetingTitle,
+      start_at: now.getTime(),
       end_at: end.getTime(),
     });
     setNewMeetingTitle('');
     setIsMeetingModalOpen(false);
   };
 
-  const tasksTodo = tasks.filter(t => t.status === 'todo');
+  const tasksTodo = tasks.filter((t) => t.status === 'todo');
 
-  const renderTask = ({ item: t }: { item: typeof tasks[0] }) => (
+  const renderTask = ({ item: t }: { item: (typeof tasks)[0] }) => (
     <Card style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <TouchableOpacity 
+      <TouchableOpacity
         onPress={() => toggleTaskStatus(t.id, t.status)}
-        style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: colors[t.quadrant.toLowerCase() as keyof typeof colors], marginRight: 12, backgroundColor: t.status === 'done' ? colors[t.quadrant.toLowerCase() as keyof typeof colors] : 'transparent' }} 
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          borderWidth: 2,
+          borderColor: colors[t.quadrant.toLowerCase() as keyof typeof colors],
+          marginRight: 12,
+          backgroundColor:
+            t.status === 'done' ? colors[t.quadrant.toLowerCase() as keyof typeof colors] : 'transparent',
+        }}
       />
-      <Text style={{ color: colors.text, flex: 1, textDecorationLine: t.status === 'done' ? 'line-through' : 'none' }}>{t.title}</Text>
-      <Text style={{ color: colors[t.quadrant.toLowerCase() as keyof typeof colors], fontSize: 12, fontWeight: 'bold' }}>{t.quadrant}</Text>
+      <Text style={{ color: colors.text, flex: 1, textDecorationLine: t.status === 'done' ? 'line-through' : 'none' }}>
+        {t.title}
+      </Text>
+      <Text
+        style={{ color: colors[t.quadrant.toLowerCase() as keyof typeof colors], fontSize: 12, fontWeight: 'bold' }}
+      >
+        {t.quadrant}
+      </Text>
       <TouchableOpacity onPress={() => softDeleteTask(t.id)} style={{ marginLeft: 8, padding: 4 }}>
         <Text style={{ color: colors.error, fontSize: 12 }}>Hapus</Text>
       </TouchableOpacity>
     </Card>
   );
 
-  const renderMeeting = ({ item: m }: { item: typeof meetings[0] }) => (
+  const renderMeeting = ({ item: m }: { item: (typeof meetings)[0] }) => (
     <Card style={{ flexDirection: 'row', alignItems: 'center' }}>
       <View style={{ flex: 1 }}>
         <Text style={{ color: colors.text, fontWeight: 'bold' }}>{m.title}</Text>
@@ -101,19 +116,21 @@ export default function Matrix() {
             style={[styles.segmentBtn, tab === t && { backgroundColor: colors.primary }]}
             onPress={() => setTab(t as any)}
           >
-            <Text style={{ color: tab === t ? '#FFF' : colors.text }}>{t}</Text>
+            <Text style={{ color: tab === t ? colors.onPrimary : colors.text }}>{t}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {tab === 'Tugas' && (
         <View style={{ flex: 1 }}>
-          <FlatList 
+          <FlatList
             data={tasksTodo}
-            keyExtractor={t => t.id}
+            keyExtractor={(t) => t.id}
             renderItem={renderTask}
             contentContainerStyle={{ padding: 16 }}
-            ListEmptyComponent={<Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 32 }}>Belum ada tugas</Text>}
+            ListEmptyComponent={
+              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 32 }}>Belum ada tugas</Text>
+            }
           />
           <View style={{ padding: 16 }}>
             <Button title="Tambah Tugas" onPress={() => setIsTaskModalOpen(true)} />
@@ -123,12 +140,16 @@ export default function Matrix() {
 
       {tab === 'Rapat' && (
         <View style={{ flex: 1 }}>
-          <FlatList 
+          <FlatList
             data={meetings}
-            keyExtractor={m => m.id}
+            keyExtractor={(m) => m.id}
             renderItem={renderMeeting}
             contentContainerStyle={{ padding: 16 }}
-            ListEmptyComponent={<Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 32 }}>Belum ada rapat/agenda</Text>}
+            ListEmptyComponent={
+              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 32 }}>
+                Belum ada rapat/agenda
+              </Text>
+            }
           />
           <View style={{ padding: 16 }}>
             <Button title="Tambah Rapat" onPress={() => setIsMeetingModalOpen(true)} />
@@ -141,21 +162,21 @@ export default function Matrix() {
           <View style={styles.gridRow}>
             <View style={[styles.quadrantBox, { backgroundColor: colors.q1 + '20', borderColor: colors.q1 }]}>
               <Text style={{ color: colors.q1, fontWeight: 'bold' }}>Q1 (Penting & Mendesak)</Text>
-              <Text style={{ color: colors.text }}>{tasksTodo.filter(t => t.quadrant==='Q1').length}</Text>
+              <Text style={{ color: colors.text }}>{tasksTodo.filter((t) => t.quadrant === 'Q1').length}</Text>
             </View>
             <View style={[styles.quadrantBox, { backgroundColor: colors.q2 + '20', borderColor: colors.q2 }]}>
               <Text style={{ color: colors.q2, fontWeight: 'bold' }}>Q2 (Penting, Tdk Mendesak)</Text>
-              <Text style={{ color: colors.text }}>{tasksTodo.filter(t => t.quadrant==='Q2').length}</Text>
+              <Text style={{ color: colors.text }}>{tasksTodo.filter((t) => t.quadrant === 'Q2').length}</Text>
             </View>
           </View>
           <View style={styles.gridRow}>
             <View style={[styles.quadrantBox, { backgroundColor: colors.q3 + '20', borderColor: colors.q3 }]}>
               <Text style={{ color: colors.q3, fontWeight: 'bold' }}>Q3 (Tdk Penting, Mendesak)</Text>
-              <Text style={{ color: colors.text }}>{tasksTodo.filter(t => t.quadrant==='Q3').length}</Text>
+              <Text style={{ color: colors.text }}>{tasksTodo.filter((t) => t.quadrant === 'Q3').length}</Text>
             </View>
             <View style={[styles.quadrantBox, { backgroundColor: colors.q4 + '20', borderColor: colors.q4 }]}>
               <Text style={{ color: colors.q4, fontWeight: 'bold' }}>Q4 (Tdk Penting, Tdk Mend)</Text>
-              <Text style={{ color: colors.text }}>{tasksTodo.filter(t => t.quadrant==='Q4').length}</Text>
+              <Text style={{ color: colors.text }}>{tasksTodo.filter((t) => t.quadrant === 'Q4').length}</Text>
             </View>
           </View>
         </View>
@@ -170,13 +191,19 @@ export default function Matrix() {
           style={[styles.input, { color: colors.text, borderColor: colors.border }]}
         />
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-          {['Q1', 'Q2', 'Q3', 'Q4'].map(q => (
-            <TouchableOpacity 
-              key={q} 
-              style={[styles.qBtn, { borderColor: colors.border, backgroundColor: newTaskQuadrant === q ? colors.primary : colors.surface }]}
+          {['Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
+            <TouchableOpacity
+              key={q}
+              style={[
+                styles.qBtn,
+                {
+                  borderColor: colors.border,
+                  backgroundColor: newTaskQuadrant === q ? colors.primary : colors.surface,
+                },
+              ]}
               onPress={() => setNewTaskQuadrant(q)}
             >
-              <Text style={{ color: newTaskQuadrant === q ? '#FFF' : colors.text }}>{q}</Text>
+              <Text style={{ color: newTaskQuadrant === q ? colors.onPrimary : colors.text }}>{q}</Text>
             </TouchableOpacity>
           ))}
         </View>

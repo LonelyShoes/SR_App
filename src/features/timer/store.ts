@@ -11,9 +11,9 @@ interface TimerState {
   status: TimerStatus;
   kind: TimerKind;
   plannedSec: number;
-  endAt: number | null;       // epoch ms when timer finishes
-  pausedRemaining: number;    // remaining ms when paused
-  startedAt: number | null;   // epoch ms when session started
+  endAt: number | null; // epoch ms when timer finishes
+  pausedRemaining: number; // remaining ms when paused
+  startedAt: number | null; // epoch ms when session started
   presetId: string | null;
   alarmNotificationId: string | null;
 
@@ -22,7 +22,7 @@ interface TimerState {
   pause: () => Promise<void>;
   resume: () => Promise<void>;
   stop: () => Promise<void>;
-  tick: () => number;         // returns remaining seconds
+  tick: () => number; // returns remaining seconds
 }
 
 export const useTimerStore = create<TimerState>((set, get) => ({
@@ -44,7 +44,12 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     try {
       notifId = await Notifications.scheduleNotificationAsync({
         content: {
-          title: kind === 'fokus' ? '⏰ Waktu Fokus Selesai!' : kind === 'rehat' ? '☕ Rehat Selesai!' : '🌴 Santai Selesai!',
+          title:
+            kind === 'fokus'
+              ? '⏰ Waktu Fokus Selesai!'
+              : kind === 'rehat'
+                ? '☕ Rehat Selesai!'
+                : '🌴 Santai Selesai!',
           body: `Sesi ${kind} ${Math.floor(durationSec / 60)} menit telah berakhir.`,
           data: { type: 'timer-alarm', url: '/timer' },
         },
@@ -101,7 +106,12 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     try {
       notifId = await Notifications.scheduleNotificationAsync({
         content: {
-          title: kind === 'fokus' ? '⏰ Waktu Fokus Selesai!' : kind === 'rehat' ? '☕ Rehat Selesai!' : '🌴 Santai Selesai!',
+          title:
+            kind === 'fokus'
+              ? '⏰ Waktu Fokus Selesai!'
+              : kind === 'rehat'
+                ? '☕ Rehat Selesai!'
+                : '🌴 Santai Selesai!',
           body: `Sesi ${kind} telah berakhir.`,
           data: { type: 'timer-alarm', url: '/timer' },
         },

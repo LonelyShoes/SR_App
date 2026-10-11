@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { tokens } from '../theme/tokens';
 
 /**
  * Set up notification channels for Android.
@@ -16,7 +17,7 @@ export async function setupNotificationChannels() {
     lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     bypassDnd: true,
     enableLights: true,
-    lightColor: '#FF0000',
+    lightColor: tokens.colors.light.error,
     // sound will use default alarm sound
   });
 
@@ -27,7 +28,7 @@ export async function setupNotificationChannels() {
     vibrationPattern: [0, 250, 250, 250],
     lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     enableLights: true,
-    lightColor: '#208AEF',
+    lightColor: tokens.colors.light.primary,
   });
 }
 

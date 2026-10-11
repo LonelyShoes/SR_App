@@ -83,10 +83,7 @@ export default function NotulaEditor() {
     });
   }, [meetingId]);
 
-  const buildInput = (
-    actionItems: ActionItem[] = items,
-    files: Attachment[] = attachments,
-  ): MinuteInput => ({
+  const buildInput = (actionItems: ActionItem[] = items, files: Attachment[] = attachments): MinuteInput => ({
     discussion,
     decisions,
     attendees: attendeesText

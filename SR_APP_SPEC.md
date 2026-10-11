@@ -287,7 +287,7 @@ Tambahkan layar **"Cek Kesehatan Notifikasi"** di Pengaturan yang menampilkan st
 ## 12. Fase Implementasi (checklist)
 
 ### Fase 0: Persiapan
-- [ ] Inisialisasi project Expo + TypeScript strict, ESLint, Prettier
+- [x] Inisialisasi project Expo + TypeScript strict, ESLint, Prettier
 - [x] `app.config.ts`: nama "SR App", Android only, portrait, `userInterfaceStyle: automatic`, package name, izin
 - [ ] Setup EAS (`eas.json`), development build ke A14 5G berhasil terpasang dan terbuka
 - [x] `ThemeProvider` + tokens terang/gelap (dasar tema sejak awal)
@@ -346,7 +346,7 @@ Tambahkan layar **"Cek Kesehatan Notifikasi"** di Pengaturan yang menampilkan st
 ### Fase 10: Polishing & Rilis
 - [ ] Audit performa di A14 5G, tema gelap di semua layar
 - [ ] Uji pemakaian harian minimal 5 hari (timer, pengingat, widget)
-- [ ] Ikon, splash screen, nama paket
+- [x] Ikon, splash screen, nama paket
 - [ ] Build APK produksi via EAS
 
 ---

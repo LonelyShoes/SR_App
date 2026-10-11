@@ -10,7 +10,7 @@ const toWidgetPalette = (colors: typeof tokens.colors.light) => ({
   text: colors.text as Hex,
   textSecondary: colors.textSecondary as Hex,
   border: colors.border as Hex,
-  onPrimary: (colors === tokens.colors.light ? '#FFFFFF' : '#000000') as Hex,
+  onPrimary: colors.onPrimary as Hex,
 });
 
 export type WidgetPalette = ReturnType<typeof toWidgetPalette>;

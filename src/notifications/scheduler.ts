@@ -51,10 +51,7 @@ export async function cancelMeetingReminder(notificationId: string | null): Prom
  * Get the effective reminder offset for a meeting.
  * Returns per-meeting offset if set, otherwise the global default.
  */
-export function getEffectiveOffset(
-  meetingOffsetMin: number | null,
-  globalDefaultMin: number = 30,
-): number {
+export function getEffectiveOffset(meetingOffsetMin: number | null, globalDefaultMin: number = 30): number {
   return meetingOffsetMin ?? globalDefaultMin;
 }
 
@@ -99,10 +96,7 @@ export async function reconcileMeetingReminders(globalDefaultMin: number = 30): 
 
     // Update the meeting's reminder_notification_id
     if (notifId) {
-      await db
-        .update(meetings)
-        .set({ reminder_notification_id: notifId })
-        .where(eq(meetings.id, meeting.id));
+      await db.update(meetings).set({ reminder_notification_id: notifId }).where(eq(meetings.id, meeting.id));
     }
   }
 }

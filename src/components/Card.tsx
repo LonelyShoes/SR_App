@@ -6,14 +6,7 @@ export const Card = ({ style, children, ...props }: ViewProps) => {
   const { colors } = useTheme();
 
   return (
-    <View
-      style={[
-        styles.card,
-        { backgroundColor: colors.surface, borderColor: colors.border },
-        style,
-      ]}
-      {...props}
-    >
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }, style]} {...props}>
       {children}
     </View>
   );

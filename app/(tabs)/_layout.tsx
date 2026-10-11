@@ -15,10 +15,10 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors.textSecondary,
       }}
     >
-      <Tabs.Screen 
-        name="index" 
-        options={{ 
-          title: 'Dashboard', 
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Dashboard',
           tabBarLabel: 'Home',
           headerRight: () => (
             <View style={{ flexDirection: 'row', marginRight: 16, gap: 16 }}>
@@ -33,8 +33,8 @@ export default function TabLayout() {
                 </TouchableOpacity>
               </Link>
             </View>
-          )
-        }} 
+          ),
+        }}
       />
       <Tabs.Screen name="matrix" options={{ title: 'Matrix 4Q', tabBarLabel: 'Matrix' }} />
       <Tabs.Screen

@@ -22,7 +22,9 @@ let db: SqlExecutor;
 
 beforeEach(() => {
   raw = new DatabaseSync(':memory:');
-  for (const file of readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql')).sort()) {
+  for (const file of readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith('.sql'))
+    .sort()) {
     for (const statement of readFileSync(join(MIGRATIONS_DIR, file), 'utf8').split('--> statement-breakpoint')) {
       if (statement.trim()) raw.exec(statement);
     }
@@ -53,7 +55,13 @@ describe('createSnapshot', () => {
     const snap = await createSnapshot(db, 999);
     expect(snap.schema_version).toBe(BACKUP_SCHEMA_VERSION);
     expect(snap.created_at).toBe(999);
-    expect(Object.keys(snap.tables).sort()).toEqual(['meetings', 'minutes', 'tasks', 'timer_presets', 'timer_sessions']);
+    expect(Object.keys(snap.tables).sort()).toEqual([
+      'meetings',
+      'minutes',
+      'tasks',
+      'timer_presets',
+      'timer_sessions',
+    ]);
     expect(snap.tables.tasks).toHaveLength(1);
     expect(snap.tables.meetings[0].participants).toEqual(['Ani']);
     // Device-only data stays out

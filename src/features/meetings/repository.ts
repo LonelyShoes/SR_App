@@ -15,7 +15,9 @@ export const getMeetingsQuery = () => {
 const refreshReminders = () =>
   reconcileMeetingReminders().catch((e) => console.warn('Failed to reconcile meeting reminders:', e));
 
-export const createMeeting = async (data: Omit<MeetingInsert, 'id' | 'created_at' | 'updated_at' | 'dirty' | 'status'> & { status?: string }) => {
+export const createMeeting = async (
+  data: Omit<MeetingInsert, 'id' | 'created_at' | 'updated_at' | 'dirty' | 'status'> & { status?: string },
+) => {
   const now = Date.now();
   await db.insert(meetings).values({
     ...data,
@@ -28,7 +30,10 @@ export const createMeeting = async (data: Omit<MeetingInsert, 'id' | 'created_at
   await refreshReminders();
 };
 
-export const updateMeeting = async (id: string, data: Partial<Omit<MeetingInsert, 'id' | 'created_at' | 'updated_at' | 'dirty'>>) => {
+export const updateMeeting = async (
+  id: string,
+  data: Partial<Omit<MeetingInsert, 'id' | 'created_at' | 'updated_at' | 'dirty'>>,
+) => {
   const now = Date.now();
   await db
     .update(meetings)

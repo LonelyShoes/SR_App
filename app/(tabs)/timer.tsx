@@ -18,12 +18,6 @@ const KIND_LABELS: Record<TimerKind, string> = {
   santai: '🌴 Santai',
 };
 
-const KIND_COLORS_LIGHT: Record<TimerKind, string> = {
-  fokus: '#EF4444',
-  rehat: '#10B981',
-  santai: '#3B82F6',
-};
-
 export default function Timer() {
   const { colors } = useTheme();
   const { status, kind, start, pause, resume, stop, tick, plannedSec, presetId } = useTimerStore();
@@ -62,21 +56,20 @@ export default function Timer() {
 
   const remaining = status === 'idle' ? (selectedPreset?.duration_sec ?? plannedSec) : tick();
 
-  const handleSelectPreset = useCallback((preset: TimerPreset) => {
-    if (status !== 'idle') return; // Can't change preset while running
-    setPickedPreset(preset);
-  }, [status]);
+  const handleSelectPreset = useCallback(
+    (preset: TimerPreset) => {
+      if (status !== 'idle') return; // Can't change preset while running
+      setPickedPreset(preset);
+    },
+    [status],
+  );
 
   const handleStart = useCallback(async () => {
     if (!selectedPreset) return;
-    await start(
-      selectedPreset.kind as TimerKind,
-      selectedPreset.duration_sec,
-      selectedPreset.id,
-    );
+    await start(selectedPreset.kind as TimerKind, selectedPreset.duration_sec, selectedPreset.id);
   }, [selectedPreset, start]);
 
-  const accentColor = KIND_COLORS_LIGHT[kind] || colors.primary;
+  const accentColor = colors[kind] ?? colors.primary;
   const progress = status === 'idle' ? 1 : remaining / plannedSec;
 
   return (
@@ -86,16 +79,13 @@ export default function Timer() {
         {presets.map((p) => (
           <TouchableOpacity
             key={p.id}
-            style={[
-              styles.presetBtn,
-              selectedPreset?.id === p.id && { backgroundColor: accentColor },
-            ]}
+            style={[styles.presetBtn, selectedPreset?.id === p.id && { backgroundColor: accentColor }]}
             onPress={() => handleSelectPreset(p)}
             disabled={status !== 'idle'}
           >
             <Text
               style={{
-                color: selectedPreset?.id === p.id ? '#FFF' : colors.text,
+                color: selectedPreset?.id === p.id ? colors.onPrimary : colors.text,
                 fontSize: 13,
                 fontWeight: selectedPreset?.id === p.id ? 'bold' : 'normal',
               }}
@@ -110,16 +100,9 @@ export default function Timer() {
       <View style={styles.timerSection}>
         {/* Circular progress ring */}
         <View style={[styles.timerRing, { borderColor: accentColor + '30' }]}>
-          <View
-            style={[
-              styles.timerRingInner,
-              { borderColor: accentColor, opacity: progress },
-            ]}
-          />
+          <View style={[styles.timerRingInner, { borderColor: accentColor, opacity: progress }]} />
           <View style={styles.timerTextContainer}>
-            <Text style={[styles.timerText, { color: accentColor }]}>
-              {formatTime(remaining)}
-            </Text>
+            <Text style={[styles.timerText, { color: accentColor }]}>{formatTime(remaining)}</Text>
             <Text style={[styles.timerLabel, { color: colors.textSecondary }]}>
               {status === 'idle'
                 ? selectedPreset?.name || 'Pilih preset'
@@ -134,44 +117,29 @@ export default function Timer() {
       {/* Controls */}
       <View style={styles.controls}>
         {status === 'idle' && (
-          <TouchableOpacity
-            style={[styles.mainBtn, { backgroundColor: accentColor }]}
-            onPress={handleStart}
-          >
-            <Text style={styles.mainBtnText}>▶ Mulai</Text>
+          <TouchableOpacity style={[styles.mainBtn, { backgroundColor: accentColor }]} onPress={handleStart}>
+            <Text style={[styles.mainBtnText, { color: colors.onPrimary }]}>▶ Mulai</Text>
           </TouchableOpacity>
         )}
 
         {status === 'running' && (
           <View style={styles.controlRow}>
-            <TouchableOpacity
-              style={[styles.controlBtn, { backgroundColor: colors.warning }]}
-              onPress={pause}
-            >
-              <Text style={styles.controlBtnText}>⏸ Jeda</Text>
+            <TouchableOpacity style={[styles.controlBtn, { backgroundColor: colors.warning }]} onPress={pause}>
+              <Text style={[styles.controlBtnText, { color: colors.onPrimary }]}>⏸ Jeda</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.controlBtn, { backgroundColor: colors.error }]}
-              onPress={stop}
-            >
-              <Text style={styles.controlBtnText}>⏹ Berhenti</Text>
+            <TouchableOpacity style={[styles.controlBtn, { backgroundColor: colors.error }]} onPress={stop}>
+              <Text style={[styles.controlBtnText, { color: colors.onError }]}>⏹ Berhenti</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {status === 'paused' && (
           <View style={styles.controlRow}>
-            <TouchableOpacity
-              style={[styles.controlBtn, { backgroundColor: accentColor }]}
-              onPress={resume}
-            >
-              <Text style={styles.controlBtnText}>▶ Lanjut</Text>
+            <TouchableOpacity style={[styles.controlBtn, { backgroundColor: accentColor }]} onPress={resume}>
+              <Text style={[styles.controlBtnText, { color: colors.onPrimary }]}>▶ Lanjut</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.controlBtn, { backgroundColor: colors.error }]}
-              onPress={stop}
-            >
-              <Text style={styles.controlBtnText}>⏹ Berhenti</Text>
+            <TouchableOpacity style={[styles.controlBtn, { backgroundColor: colors.error }]} onPress={stop}>
+              <Text style={[styles.controlBtnText, { color: colors.onError }]}>⏹ Berhenti</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -246,7 +214,6 @@ const styles = StyleSheet.create({
     borderRadius: 32,
   },
   mainBtnText: {
-    color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -260,7 +227,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   controlBtnText: {
-    color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
   },

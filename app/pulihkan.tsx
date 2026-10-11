@@ -43,7 +43,10 @@ export default function Pulihkan() {
       ) : !backups ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: tokens.spacing.xl }} />
       ) : backups.length === 0 ? (
-        <EmptyState title="Belum ada backup" description="Backup cloud dibuat otomatis setiap hari saat kamu masuk ke akun." />
+        <EmptyState
+          title="Belum ada backup"
+          description="Backup cloud dibuat otomatis setiap hari saat kamu masuk ke akun."
+        />
       ) : (
         <FlatList
           data={backups}

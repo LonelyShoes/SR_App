@@ -53,9 +53,7 @@ export default function Pengaturan() {
       <BackupSettingsCard />
 
       {/* Cek Kesehatan Notifikasi */}
-      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>
-        Cek Kesehatan Notifikasi
-      </Text>
+      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Cek Kesehatan Notifikasi</Text>
 
       {/* Status Notifikasi */}
       <Card>
@@ -63,13 +61,7 @@ export default function Pengaturan() {
           <Text style={{ color: colors.text, flex: 1 }}>🔔 Izin Notifikasi</Text>
           <StatusBadge status={notifStatus} colors={colors} />
         </View>
-        {notifStatus !== 'granted' && (
-          <Button
-            title="Minta Izin"
-            onPress={requestNotifPermission}
-            variant="primary"
-          />
-        )}
+        {notifStatus !== 'granted' && <Button title="Minta Izin" onPress={requestNotifPermission} variant="primary" />}
       </Card>
 
       {/* Exact Alarm */}
@@ -80,11 +72,7 @@ export default function Pengaturan() {
         <Text style={{ color: colors.textSecondary, fontSize: 13, marginBottom: 12 }}>
           Pastikan izin “Alarm &amp; pengingat” aktif agar timer berbunyi tepat waktu.
         </Text>
-        <Button
-          title="Buka Pengaturan Sistem"
-          onPress={() => Linking.openSettings()}
-          variant="secondary"
-        />
+        <Button title="Buka Pengaturan Sistem" onPress={() => Linking.openSettings()} variant="secondary" />
       </Card>
 
       {/* Battery */}
@@ -96,17 +84,11 @@ export default function Pengaturan() {
           Atur app ke “Tidak dibatasi” agar timer berjalan di latar belakang.
           {'\n'}Matikan “Alihkan app yang tidak digunakan ke tidur”.
         </Text>
-        <Button
-          title="Buka Pengaturan Baterai"
-          onPress={() => Linking.openSettings()}
-          variant="secondary"
-        />
+        <Button title="Buka Pengaturan Baterai" onPress={() => Linking.openSettings()} variant="secondary" />
       </Card>
 
       {/* Pengingat Rapat */}
-      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>
-        Pengingat Rapat
-      </Text>
+      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Pengingat Rapat</Text>
       <Card>
         <Text style={{ color: colors.textSecondary, fontSize: 13, marginBottom: 8 }}>
           Default pengingat: 30 menit sebelum rapat dimulai.
@@ -119,27 +101,11 @@ export default function Pengaturan() {
   );
 }
 
-function StatusBadge({
-  status,
-  colors,
-}: {
-  status: PermissionStatus;
-  colors: any;
-}) {
+function StatusBadge({ status, colors }: { status: PermissionStatus; colors: any }) {
   const label =
-    status === 'granted'
-      ? '✅ Aktif'
-      : status === 'denied'
-        ? '❌ Ditolak'
-        : status === 'loading'
-          ? '⏳'
-          : '⚪ Belum';
+    status === 'granted' ? '✅ Aktif' : status === 'denied' ? '❌ Ditolak' : status === 'loading' ? '⏳' : '⚪ Belum';
   const bgColor =
-    status === 'granted'
-      ? colors.success + '30'
-      : status === 'denied'
-        ? colors.error + '30'
-        : colors.surface;
+    status === 'granted' ? colors.success + '30' : status === 'denied' ? colors.error + '30' : colors.surface;
 
   return (
     <View style={[styles.badge, { backgroundColor: bgColor }]}>

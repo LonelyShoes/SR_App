@@ -53,21 +53,13 @@ export default function Onboarding() {
       <Card>
         <View style={styles.permRow}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.permTitle, { color: colors.text }]}>
-              🔔 Notifikasi
-            </Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-              Untuk alarm timer dan pengingat rapat.
-            </Text>
+            <Text style={[styles.permTitle, { color: colors.text }]}>🔔 Notifikasi</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Untuk alarm timer dan pengingat rapat.</Text>
           </View>
           <StatusBadge status={notifStatus} colors={colors} />
         </View>
         {notifStatus !== 'granted' && (
-          <Button
-            title="Izinkan Notifikasi"
-            onPress={requestNotifPermission}
-            variant="primary"
-          />
+          <Button title="Izinkan Notifikasi" onPress={requestNotifPermission} variant="primary" />
         )}
       </Card>
 
@@ -75,39 +67,27 @@ export default function Onboarding() {
       <Card>
         <View style={styles.permRow}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.permTitle, { color: colors.text }]}>
-              ⏰ Alarm Tepat Waktu
-            </Text>
+            <Text style={[styles.permTitle, { color: colors.text }]}>⏰ Alarm Tepat Waktu</Text>
             <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
               Agar timer dan pengingat rapat berbunyi tepat waktu.
             </Text>
           </View>
         </View>
-        <Button
-          title="Buka Pengaturan Alarm"
-          onPress={openAlarmSettings}
-          variant="secondary"
-        />
+        <Button title="Buka Pengaturan Alarm" onPress={openAlarmSettings} variant="secondary" />
       </Card>
 
       {/* Battery Optimization */}
       <Card>
         <View style={styles.permRow}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.permTitle, { color: colors.text }]}>
-              🔋 Baterai (Samsung/One UI)
-            </Text>
+            <Text style={[styles.permTitle, { color: colors.text }]}>🔋 Baterai (Samsung/One UI)</Text>
             <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
               Atur app ke “Tidak dibatasi” agar timer tetap berjalan di latar belakang.
               {'\n'}Matikan “Alihkan app yang tidak digunakan ke tidur”.
             </Text>
           </View>
         </View>
-        <Button
-          title="Buka Pengaturan Baterai"
-          onPress={openBatterySettings}
-          variant="secondary"
-        />
+        <Button title="Buka Pengaturan Baterai" onPress={openBatterySettings} variant="secondary" />
       </Card>
 
       <View style={{ marginTop: 24 }}>
@@ -121,13 +101,7 @@ export default function Onboarding() {
   );
 }
 
-function StatusBadge({
-  status,
-  colors,
-}: {
-  status: PermissionStatus;
-  colors: any;
-}) {
+function StatusBadge({ status, colors }: { status: PermissionStatus; colors: any }) {
   const label =
     status === 'granted'
       ? '✅ Diizinkan'
@@ -137,11 +111,7 @@ function StatusBadge({
           ? '⏳'
           : '⚪ Belum';
   const bgColor =
-    status === 'granted'
-      ? colors.success + '30'
-      : status === 'denied'
-        ? colors.error + '30'
-        : colors.surface;
+    status === 'granted' ? colors.success + '30' : status === 'denied' ? colors.error + '30' : colors.surface;
 
   return (
     <View style={[styles.badge, { backgroundColor: bgColor }]}>

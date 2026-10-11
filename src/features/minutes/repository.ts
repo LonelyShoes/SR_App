@@ -89,20 +89,14 @@ export const saveMinute = async (meetingId: string, input: MinuteInput): Promise
 
 export const softDeleteMinute = async (id: string) => {
   const now = Date.now();
-  await db
-    .update(minutes)
-    .set({ deleted_at: now, updated_at: now, dirty: 1 })
-    .where(eq(minutes.id, id));
+  await db.update(minutes).set({ deleted_at: now, updated_at: now, dirty: 1 }).where(eq(minutes.id, id));
 };
 
 /**
  * Turn an action item into a Matrix task linked to the meeting.
  * Returns the action item with its new task_id.
  */
-export const convertActionItemToTask = async (
-  meetingId: string,
-  item: ActionItem,
-): Promise<ActionItem> => {
+export const convertActionItemToTask = async (meetingId: string, item: ActionItem): Promise<ActionItem> => {
   if (item.task_id) return item;
   const taskId = await createTask({
     title: item.text,

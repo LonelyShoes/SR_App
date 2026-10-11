@@ -8,10 +8,7 @@ import { useTheme } from '../../src/theme/ThemeProvider';
 import { tokens } from '../../src/theme/tokens';
 import { Card } from '../../src/components/Card';
 import { EmptyState } from '../../src/components/EmptyState';
-import {
-  getMeetingsWithoutMinutesQuery,
-  getMinutesWithMeetingQuery,
-} from '../../src/features/minutes/repository';
+import { getMeetingsWithoutMinutesQuery, getMinutesWithMeetingQuery } from '../../src/features/minutes/repository';
 import { useTablesVersion } from '../../src/db/use-tables-version';
 
 type Row = { key: string; meetingId: string; title: string; startAt: number; caption: string };

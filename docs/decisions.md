@@ -142,3 +142,13 @@
 - **Cloud:** bucket privat `backups`, path `{user_id}/{timestamp}.json` dengan RLS per folder (`supabase/migrations/20261011010000_backups_storage.sql`). Retensi 7 backup terbaru.
 - **Unduhan** memakai signed URL + `fetch`, karena `Blob.text()` tidak tersedia di React Native.
 - **Jadwal:** dicek 15 detik setelah app dibuka dan di tugas latar belakang sync (sekitar tiap jam). Backup dibuat bila yang terakhir lebih dari 24 jam lalu. Backup otomatis butuh login, sedangkan ekspor/impor file bisa tanpa akun.
+
+## 13. Polishing Rilis: Kontras, Ikon, Build
+
+**Tanggal:** 2026-10-11
+- **Kontras WCAG AA:** warna terang `primary`, `error`, `success`, `warning`, dan kuadran digelapkan sampai ≥ 4.5:1, baik sebagai teks di latar terang/abu maupun sebagai latar teks `onPrimary`. Diverifikasi dengan rumus luminans WCAG. Warna lama `#208AEF` + teks putih hanya mencapai 3.53:1.
+- **Token baru:** `onPrimary`, `onError`, `overlay`, dan warna mode timer `fokus`/`rehat`/`santai`. Tidak ada lagi warna hex di komponen. PDF notula memakai token terang (selalu terang). Hex hanya tersisa di `app.config.ts` (ikon notifikasi dan splash), karena config dibaca di luar app.
+- **Ikon:** dibuat dari `assets/images/sr-logo.jpg` lewat skrip `jimp-compact`. Huruf mengisi 52% lebar ikon adaptif, masih di dalam area aman 61% semua bentuk masker. Juga dibuat ikon monochrome (Android 13+), ikon notifikasi putih-transparan, serta splash terang dan gelap. Aset sisa template Expo dan `scripts/reset-project.js` (berbahaya bila dijalankan) dihapus.
+- **Index SQLite:** migrasi `0001_add_indexes` pada kolom yang dipakai query layar, statistik, dan sync (`status`+`quadrant`, `due_at`, `completed_at`, `start_at`, `meeting_id`, `started_at`, `dirty`).
+- **Build:** semua profil EAS menghasilkan APK (spec: install langsung). Profil `production` memakai `autoIncrement` dengan versi yang dikelola EAS (`appVersionSource: remote`). Variabel Supabase diambil dari environment EAS sesuai profil.
+- **Uji E2E Supabase:** `npm run test:e2e` menjalankan mesin sync yang sama terhadap project Supabase sungguhan (RLS, trigger LWW, kursor, bucket). Test ini memakai konfigurasi Jest tanpa preset `jest-expo`, karena preset itu mengganti `fetch` sehingga request HTTP sungguhan tidak bisa jalan.

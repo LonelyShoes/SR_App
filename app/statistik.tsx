@@ -31,7 +31,7 @@ export default function Statistik() {
     };
   }, [range, version]);
 
-  const kindColors: Record<string, string> = { fokus: colors.q1, rehat: colors.success, santai: colors.primary };
+  const kindColors: Record<string, string> = { fokus: colors.fokus, rehat: colors.rehat, santai: colors.santai };
 
   const seriesLabel = (day: string) =>
     stats?.seriesUnit === 'minggu' || range === 30
@@ -41,9 +41,7 @@ export default function Statistik() {
 
   return (
     <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.content}>
-      <Stack.Screen
-        options={{ headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }}
-      />
+      <Stack.Screen options={{ headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
 
       <View style={[styles.segmented, { backgroundColor: colors.surface }]}>
         {RANGES.map((r) => (
@@ -54,7 +52,7 @@ export default function Statistik() {
             accessibilityRole="button"
             accessibilityState={{ selected: range === r }}
           >
-            <Text style={{ color: range === r ? colors.background : colors.text, fontWeight: 'bold' }}>{r} hari</Text>
+            <Text style={{ color: range === r ? colors.onPrimary : colors.text, fontWeight: 'bold' }}>{r} hari</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -86,7 +84,7 @@ export default function Statistik() {
             <BarChart
               data={stats.focusSeries.map((d) => ({ label: seriesLabel(d.day), value: d.value }))}
               labelEvery={labelEvery}
-              color={colors.q1}
+              color={colors.fokus}
               accessibilityLabel={`Waktu fokus per ${stats.seriesUnit}, total ${formatDuration(stats.totalFocusSec)}`}
             />
           </Card>

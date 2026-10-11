@@ -6,14 +6,7 @@ import { getSetting, setSetting } from '../settings/repository';
 import { reconcileMeetingReminders } from '../../notifications/scheduler';
 import { expoExecutor, getSupabase } from '../sync/supabase';
 import { syncNow } from '../sync/service';
-import {
-  Snapshot,
-  backupFileName,
-  backupsToPrune,
-  createSnapshot,
-  parseSnapshot,
-  restoreSnapshot,
-} from './snapshot';
+import { Snapshot, backupFileName, backupsToPrune, createSnapshot, parseSnapshot, restoreSnapshot } from './snapshot';
 
 const BUCKET = 'backups';
 const KEEP = 7;
@@ -78,7 +71,10 @@ export const backupToCloud = async (snapshot?: Snapshot): Promise<boolean> => {
   if (error) throw error;
 
   const existing = await listCloudBackups();
-  const prune = backupsToPrune(existing.map((b) => b.name), KEEP);
+  const prune = backupsToPrune(
+    existing.map((b) => b.name),
+    KEEP,
+  );
   if (prune.length > 0) {
     await cloud.supabase.storage.from(BUCKET).remove(prune.map((n) => `${cloud.userId}/${n}`));
   }
@@ -145,7 +141,10 @@ const saveLocalSafetyCopy = async (snap: Snapshot) => {
   file.create();
   file.write(JSON.stringify(snap));
 
-  const names = dir.list().filter((f): f is File => f instanceof File).map((f) => f.name);
+  const names = dir
+    .list()
+    .filter((f): f is File => f instanceof File)
+    .map((f) => f.name);
   for (const name of backupsToPrune(names, KEEP)) new File(dir, name).delete();
 };
 

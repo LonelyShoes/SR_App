@@ -7,11 +7,7 @@ export type TimerPreset = typeof timer_presets.$inferSelect;
 export type TimerSession = typeof timer_sessions.$inferSelect;
 
 export const getPresetsQuery = () => {
-  return db
-    .select()
-    .from(timer_presets)
-    .where(isNull(timer_presets.deleted_at))
-    .orderBy(timer_presets.sort_order);
+  return db.select().from(timer_presets).where(isNull(timer_presets.deleted_at)).orderBy(timer_presets.sort_order);
 };
 
 export const getSessionsQuery = () => {
@@ -22,12 +18,7 @@ export const getSessionsQuery = () => {
     .orderBy(desc(timer_sessions.started_at));
 };
 
-export const createPreset = async (
-  kind: string,
-  name: string,
-  durationSec: number,
-  sortOrder: number = 0,
-) => {
+export const createPreset = async (kind: string, name: string, durationSec: number, sortOrder: number = 0) => {
   const now = Date.now();
   await db.insert(timer_presets).values({
     id: Crypto.randomUUID(),
@@ -59,8 +50,5 @@ export const updatePreset = async (
 
 export const softDeletePreset = async (id: string) => {
   const now = Date.now();
-  await db
-    .update(timer_presets)
-    .set({ deleted_at: now, updated_at: now, dirty: 1 })
-    .where(eq(timer_presets.id, id));
+  await db.update(timer_presets).set({ deleted_at: now, updated_at: now, dirty: 1 }).where(eq(timer_presets.id, id));
 };

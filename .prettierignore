@@ -1,0 +1,9 @@
+node_modules/
+temp_app/
+android/
+ios/
+dist/
+.expo/
+src/db/migrations/
+*.md
+package-lock.json

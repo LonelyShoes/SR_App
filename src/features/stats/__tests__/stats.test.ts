@@ -35,7 +35,18 @@ const session = (kind: string, start: number, actualMin: number, completed = 1, 
   db.prepare(
     `INSERT INTO timer_sessions (id, kind, planned_sec, started_at, ended_at, completed, actual_sec, created_at, updated_at, deleted_at, dirty)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-  ).run(`s${seq}`, kind, actualMin * 60, start, start + actualMin * 60000, completed, actualMin * 60, start, start, deleted ? start : null);
+  ).run(
+    `s${seq}`,
+    kind,
+    actualMin * 60,
+    start,
+    start + actualMin * 60000,
+    completed,
+    actualMin * 60,
+    start,
+    start,
+    deleted ? start : null,
+  );
 };
 
 const doneTask = (completedAt: number, deleted = false) => {
@@ -49,7 +60,9 @@ const doneTask = (completedAt: number, deleted = false) => {
 beforeEach(() => {
   db = new DatabaseSync(':memory:');
   // Apply the real Drizzle migrations
-  for (const file of readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql')).sort()) {
+  for (const file of readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith('.sql'))
+    .sort()) {
     for (const statement of readFileSync(join(MIGRATIONS_DIR, file), 'utf8').split('--> statement-breakpoint')) {
       if (statement.trim()) db.exec(statement);
     }
@@ -167,7 +180,15 @@ describe('perhitungan statistik', () => {
   });
 
   test('bucket mingguan', () => {
-    const series = fillDays([{ day: '2026-10-06', value: 1 }, { day: '2026-10-13', value: 2 }], FROM, 14, WIB);
+    const series = fillDays(
+      [
+        { day: '2026-10-06', value: 1 },
+        { day: '2026-10-13', value: 2 },
+      ],
+      FROM,
+      14,
+      WIB,
+    );
     expect(bucket(series, 7)).toEqual([
       { day: '2026-10-06', value: 1 },
       { day: '2026-10-13', value: 2 },
@@ -175,7 +196,10 @@ describe('perhitungan statistik', () => {
   });
 
   test('jam paling produktif', () => {
-    const { hours, peakHour } = fillHours([{ hour: 9, value: 300 }, { hour: 14, value: 900 }]);
+    const { hours, peakHour } = fillHours([
+      { hour: 9, value: 300 },
+      { hour: 14, value: 900 },
+    ]);
     expect(hours).toHaveLength(24);
     expect(peakHour).toBe(14);
     expect(fillHours([]).peakHour).toBeNull();

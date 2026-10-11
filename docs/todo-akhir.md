@@ -2,12 +2,12 @@
 
 Dicatat 2026-10-11 setelah Fase 3. Kerjakan sebelum/saat Fase 10 (Polishing & Rilis).
 
-- [ ] Tambahkan konfigurasi Prettier (Fase 0)
+- [x] Konfigurasi Prettier (`npm run format`)
 - [ ] Development build via EAS (`npx eas-cli@latest build --profile development --platform android`) dan pasang di Samsung A14 5G (Fase 0)
 - [ ] Uji bunyi alarm timer: layar mati, app ditutup/di-swipe, mode hemat baterai (Fase 3)
 - [ ] Finalkan keputusan channel vs native module di `docs/decisions.md` #1 berdasarkan hasil uji (Fase 3)
 - [x] Commit pertama + push ke github.com/LonelyShoes/SR_App (branch `main`), project EAS @whitesr/sr-app terhubung lewat `owner` + `projectId`
-- [ ] Samakan lokasi route: kode di `app/`, sedangkan `AGENTS.md` menyebut `src/app/`
+- [x] Lokasi route disamakan: `AGENTS.md` kini menyebut `app/`
 - [x] Lampiran notula: `expo-document-picker` disetujui dan sudah dipasang (Fase 4)
 - [ ] Uji di HP: ekspor PDF + share sheet, alur "Jadikan tugas", konfirmasi status `selesai`, tambah/buka/hapus lampiran (Fase 4)
 - [ ] Uji di HP: Quick Plan suara `id-ID` di A14 5G (izin mikrofon saat pertama dipakai, hasil pengenalan, error tanpa internet). Pastikan layanan Google Speech aktif (Fase 5)
@@ -19,4 +19,5 @@ Dicatat 2026-10-11 setelah Fase 3. Kerjakan sebelum/saat Fase 10 (Polishing & Ri
 - [ ] Uji sync di HP: dua perangkat dengan akun yang sama, offline lalu online, ganti akun (Fase 8)
 - [ ] Unggah file lampiran notula ke Supabase Storage (saat ini hanya metadata yang tersinkron)
 - [ ] Uji di HP: backup cloud otomatis, ekspor/impor file, pulihkan dari cloud (cek data yang dipulihkan tidak ditimpa sync) (Fase 9)
-- [ ] Opsional: matikan "Confirm email" di Supabase → Authentication → Providers → Email agar daftar akun lebih praktis
+- [x] "Confirm email" di Supabase dimatikan
+- [ ] Hapus 2 akun uji E2E di Supabase → Authentication → Users (`sr-e2e-a-…@example.com`, `sr-e2e-b-…@example.com`); datanya sudah dibersihkan

@@ -4,8 +4,7 @@ import { parseQuickPlan } from '../date-parser-id';
 // Senin, 12 Oktober 2026 pukul 08.00 (waktu lokal)
 const NOW = new Date(2026, 9, 12, 8, 0);
 
-const at = (month: number, day: number, hour = 0, minute = 0, year = 2026) =>
-  new Date(year, month, day, hour, minute);
+const at = (month: number, day: number, hour = 0, minute = 0, year = 2026) => new Date(year, month, day, hour, minute);
 
 const parse = (text: string) => parseQuickPlan(text, NOW);
 

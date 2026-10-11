@@ -13,9 +13,7 @@ export const EmptyState = ({ title, description }: EmptyStateProps) => {
   return (
     <View style={styles.container}>
       <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-      <Text style={[styles.description, { color: colors.textSecondary }]}>
-        {description}
-      </Text>
+      <Text style={[styles.description, { color: colors.textSecondary }]}>{description}</Text>
     </View>
   );
 };
