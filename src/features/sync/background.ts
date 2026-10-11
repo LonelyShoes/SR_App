@@ -1,6 +1,7 @@
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import { runSync } from './service';
+import { runAutoBackupIfDue } from '../backup/service';
 
 const SYNC_TASK = 'sr-app-background-sync';
 // Android/WorkManager runs it at most this often (minutes), best effort
@@ -10,6 +11,8 @@ const INTERVAL_MIN = 60;
 TaskManager.defineTask(SYNC_TASK, async () => {
   try {
     await runSync();
+    // Daily cloud backup piggybacks on the same periodic task
+    await runAutoBackupIfDue();
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch (e) {
     console.warn('Background sync failed', e);

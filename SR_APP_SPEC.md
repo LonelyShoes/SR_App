@@ -333,15 +333,15 @@ Tambahkan layar **"Cek Kesehatan Notifikasi"** di Pengaturan yang menampilkan st
 - [x] Chart mengikuti tema gelap
 
 ### Fase 8: Sinkronisasi Cloud
-- [ ] Project Supabase, tabel + RLS, Auth (kode + SQL siap; menunggu project dibuat, lihat docs/supabase-setup.md)
+- [x] Project Supabase, tabel + RLS, Auth
 - [x] Push/pull + resolusi konflik + indikator status
 - [x] Rekonsiliasi notifikasi setelah pull
 - [ ] Uji dua perangkat/dua akun, uji offline lalu online
 
 ### Fase 9: Backup Otomatis
-- [ ] Snapshot JSON + unggah ke Storage + retensi 7 backup
-- [ ] Jadwal harian + pengecekan saat app dibuka
-- [ ] Ekspor/impor manual, layar Pulihkan, `schema_version`
+- [x] Snapshot JSON + unggah ke Storage + retensi 7 backup
+- [x] Jadwal harian + pengecekan saat app dibuka
+- [x] Ekspor/impor manual, layar Pulihkan, `schema_version`
 
 ### Fase 10: Polishing & Rilis
 - [ ] Audit performa di A14 5G, tema gelap di semua layar

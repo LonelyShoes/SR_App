@@ -6,6 +6,7 @@ import { Card } from '../src/components/Card';
 import { ThemeMode } from '../src/theme/tokens';
 import * as Notifications from 'expo-notifications';
 import { SyncSettingsCard } from '../src/features/sync/SyncSettingsCard';
+import { BackupSettingsCard } from '../src/features/backup/BackupSettingsCard';
 
 type PermissionStatus = 'granted' | 'denied' | 'undetermined' | 'loading';
 
@@ -46,6 +47,10 @@ export default function Pengaturan() {
       {/* Akun & Sinkronisasi */}
       <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Akun & Sinkronisasi</Text>
       <SyncSettingsCard />
+
+      {/* Backup */}
+      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Backup</Text>
+      <BackupSettingsCard />
 
       {/* Cek Kesehatan Notifikasi */}
       <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>

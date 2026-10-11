@@ -22,6 +22,10 @@ Tampilan dashboard Supabase kadang berubah sedikit; nama menu di bawah bisa berb
 
 SQL ini membuat tabel yang sama dengan database di HP, mengaktifkan **Row Level Security** (setiap akun hanya bisa membaca/menulis datanya sendiri), dan memasang aturan "perubahan terakhir menang".
 
+### 2b. Bucket backup (Fase 9)
+
+Ulangi langkah di atas dengan isi file `supabase/migrations/20261011010000_backups_storage.sql`. Ini membuat bucket privat `backups` untuk backup otomatis. Cek di menu **Storage**: bucket `backups` muncul dengan label **Private**.
+
 ## 3. Atur login email
 
 1. Buka **Authentication** → **Sign In / Providers** (atau **Providers**) → pastikan **Email** aktif.

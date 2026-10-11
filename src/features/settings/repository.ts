@@ -9,7 +9,9 @@ export type SettingKey =
   | 'sync_enabled'
   | 'sync_user_id'
   | 'sync_cursors'
-  | 'last_synced_at';
+  | 'last_synced_at'
+  | 'auto_backup_enabled'
+  | 'last_backup_at';
 
 /** Synchronous read, for values needed before the first render (e.g. theme). */
 export const getSettingSync = (key: SettingKey): string | null => {

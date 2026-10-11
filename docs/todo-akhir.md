@@ -18,3 +18,5 @@ Dicatat 2026-10-11 setelah Fase 3. Kerjakan sebelum/saat Fase 10 (Polishing & Ri
 - [ ] Hubungkan GitHub ke Expo (dipandu di akhir): https://expo.dev/accounts/whitesr/projects/sr-app/github → Connect → pasang Expo GitHub App di akun `LonelyShoes` → pilih repo `SR_App` (base directory kosong) → aktifkan Build triggers (branch `main`, Android, profile `development`)
 - [ ] Uji sync di HP: dua perangkat dengan akun yang sama, offline lalu online, ganti akun (Fase 8)
 - [ ] Unggah file lampiran notula ke Supabase Storage (saat ini hanya metadata yang tersinkron)
+- [ ] Uji di HP: backup cloud otomatis, ekspor/impor file, pulihkan dari cloud (cek data yang dipulihkan tidak ditimpa sync) (Fase 9)
+- [ ] Opsional: matikan "Confirm email" di Supabase → Authentication → Providers → Email agar daftar akun lebih praktis

@@ -12,6 +12,7 @@ import * as Notifications from 'expo-notifications';
 import { startWidgetAutoUpdate } from '../src/widgets/update';
 import { startSyncService } from '../src/features/sync/service';
 import { registerBackgroundSync, unregisterBackgroundSync } from '../src/features/sync/background';
+import { loadBackupSettings, runAutoBackupIfDue } from '../src/features/backup/service';
 
 // Configure notification handler at module level (before any component renders)
 setupNotificationHandler();
@@ -33,9 +34,15 @@ export default function Layout() {
         onSignedIn: () => registerBackgroundSync().catch((e) => console.warn('Background sync:', e)),
         onSignedOut: () => unregisterBackgroundSync().catch((e) => console.warn('Background sync:', e)),
       });
+      // Daily backup check on app open; delayed so the first sync can finish
+      loadBackupSettings();
+      const backupTimer = setTimeout(() => {
+        runAutoBackupIfDue().catch((e) => console.warn('Auto backup failed:', e));
+      }, 15000);
       return () => {
         stopWidgets();
         stopSync();
+        clearTimeout(backupTimer);
       };
     }
   }, [success]);
@@ -78,6 +85,7 @@ export default function Layout() {
           name="modals/quick-plan"
           options={{ headerShown: true, title: 'Quick Plan', presentation: 'modal' }}
         />
+        <Stack.Screen name="pulihkan" options={{ headerShown: true, title: 'Pulihkan Backup' }} />
         <Stack.Screen name="statistik" options={{ headerShown: true, title: 'Statistik' }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       </Stack>

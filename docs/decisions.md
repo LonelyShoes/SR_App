@@ -131,3 +131,14 @@
 - **Ganti akun di perangkat yang sama:** pengguna diminta konfirmasi. Jika setuju, semua baris lokal ditandai dirty dan diunggah ke akun baru, dan kursor di-reset. Logout tidak pernah menghapus data lokal.
 - **Kunci:** hanya Project URL + publishable key lewat `EXPO_PUBLIC_*` (`.env.local`, tidak di-commit). Secret/service_role key tidak pernah ada di klien.
 - **Lampiran:** hanya metadata yang tersinkron. Unggah file ke Supabase Storage menyusul (TODO).
+
+## 12. Backup dan Pulihkan
+
+**Tanggal:** 2026-10-11
+**Keputusan dan detail:**
+- **Isi snapshot:** JSON berisi `schema_version`, lalu semua tabel yang tersinkron dengan kolom yang sama seperti sync. Tidak menyertakan `settings`, `dirty`, atau `reminder_notification_id`. Validasi memakai `zod`. Backup versi lama di-upgrade lewat rantai `MIGRATIONS`, dan backup dari versi app yang lebih baru ditolak.
+- **Restore harus menang atas sync:** baris dari backup ditulis dengan `updated_at = sekarang` dan `dirty = 1`. Baris lokal yang tidak ada di backup di-soft-delete dengan cara yang sama. Tanpa ini, sync berikutnya akan menarik kembali versi server dan membatalkan restore. Restore berjalan dalam satu transaksi, jadi kalau gagal di tengah, semuanya dibatalkan.
+- **Sebelum restore,** data saat ini disalin ke `Paths.document/backups/` (7 terakhir) dan, bila sudah login, juga ke cloud. Setelah restore, pengingat rapat dijadwalkan ulang dan sync dijalankan.
+- **Cloud:** bucket privat `backups`, path `{user_id}/{timestamp}.json` dengan RLS per folder (`supabase/migrations/20261011010000_backups_storage.sql`). Retensi 7 backup terbaru.
+- **Unduhan** memakai signed URL + `fetch`, karena `Blob.text()` tidak tersedia di React Native.
+- **Jadwal:** dicek 15 detik setelah app dibuka dan di tugas latar belakang sync (sekitar tiap jam). Backup dibuat bila yang terakhir lebih dari 24 jam lalu. Backup otomatis butuh login, sedangkan ekspor/impor file bisa tanpa akun.
