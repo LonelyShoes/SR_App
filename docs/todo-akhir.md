@@ -6,7 +6,7 @@ Dicatat 2026-10-11 setelah Fase 3. Kerjakan sebelum/saat Fase 10 (Polishing & Ri
 - [ ] Development build via EAS (`npx eas-cli@latest build --profile development --platform android`) dan pasang di Samsung A14 5G (Fase 0)
 - [ ] Uji bunyi alarm timer: layar mati, app ditutup/di-swipe, mode hemat baterai (Fase 3)
 - [ ] Finalkan keputusan channel vs native module di `docs/decisions.md` #1 berdasarkan hasil uji (Fase 3)
-- [ ] Buat commit pertama (semua file proyek masih untracked)
+- [x] Commit pertama + push ke github.com/LonelyShoes/SR_App (branch `main`), project EAS @whitesr/sr-app terhubung lewat `owner` + `projectId`
 - [ ] Samakan lokasi route: kode di `app/`, sedangkan `AGENTS.md` menyebut `src/app/`
 - [x] Lampiran notula: `expo-document-picker` disetujui dan sudah dipasang (Fase 4)
 - [ ] Uji di HP: ekspor PDF + share sheet, alur "Jadikan tugas", konfirmasi status `selesai`, tambah/buka/hapus lampiran (Fase 4)
