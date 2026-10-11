@@ -1,141 +1,78 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Linking } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTheme } from '../src/theme/ThemeProvider';
-import { Button } from '../src/components/Button';
-import { Card } from '../src/components/Card';
-import { ThemeMode } from '../src/theme/tokens';
-import * as Notifications from 'expo-notifications';
+import { tokens, ThemeMode } from '../src/theme/tokens';
+import { Tap } from '../src/components/Tap';
+import { Icon, IconName } from '../src/components/Icon';
+import { SectionHeader } from '../src/components/SectionHeader';
 import { SyncSettingsCard } from '../src/features/sync/SyncSettingsCard';
 import { BackupSettingsCard } from '../src/features/backup/BackupSettingsCard';
 import { ReminderSettingsCard } from '../src/features/meetings/ReminderSettingsCard';
+import { AlarmHealthChecks } from '../src/features/settings/AlarmHealthChecks';
 
-type PermissionStatus = 'granted' | 'denied' | 'undetermined' | 'loading';
-
-// Battery optimization list; falls back to the app's settings page if the OEM blocks the intent
-const openBatterySettings = () =>
-  Linking.sendIntent('android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS').catch(() => Linking.openSettings());
+const THEMES: { value: ThemeMode; label: string; icon: IconName }[] = [
+  { value: 'system', label: 'Sistem', icon: 'brightness_auto' },
+  { value: 'light', label: 'Terang', icon: 'light_mode' },
+  { value: 'dark', label: 'Gelap', icon: 'dark_mode' },
+];
 
 export default function Pengaturan() {
   const { colors, themeMode, setThemeMode } = useTheme();
-  const [notifStatus, setNotifStatus] = useState<PermissionStatus>('loading');
-
-  useEffect(() => {
-    Notifications.getPermissionsAsync().then(({ status }) => setNotifStatus(status));
-  }, []);
-
-  const requestNotifPermission = async () => {
-    const { status } = await Notifications.requestPermissionsAsync();
-    setNotifStatus(status);
-  };
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-    >
-      {/* Tema */}
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Tema Tampilan</Text>
-      <Card>
-        <View style={styles.themeButtons}>
-          {(['system', 'light', 'dark'] as ThemeMode[]).map((t) => (
-            <View key={t} style={styles.btnWrapper}>
-              <Button
-                title={t === 'system' ? '🖥 Sistem' : t === 'light' ? '☀️ Terang' : '🌙 Gelap'}
-                variant={themeMode === t ? 'primary' : 'secondary'}
-                onPress={() => setThemeMode(t)}
-              />
-            </View>
-          ))}
-        </View>
-      </Card>
+    <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.content}>
+      <SectionHeader title="Tema Tampilan" first />
+      <View style={styles.themeRow}>
+        {THEMES.map((t) => {
+          const active = themeMode === t.value;
+          return (
+            <Tap
+              key={t.value}
+              onPress={() => setThemeMode(t.value)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              style={[styles.themeTile, { backgroundColor: active ? colors.primary : colors.surface }]}
+            >
+              <Icon name={t.icon} size={26} color={active ? colors.onPrimary : colors.primary} />
+              <Text style={[styles.themeLabel, { color: active ? colors.onPrimary : colors.text }]}>{t.label}</Text>
+            </Tap>
+          );
+        })}
+      </View>
 
-      {/* Pengingat rapat */}
-      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Pengingat Rapat</Text>
+      <SectionHeader title="Pengingat Rapat" />
       <ReminderSettingsCard />
 
-      {/* Akun & Sinkronisasi */}
-      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Akun & Sinkronisasi</Text>
+      <SectionHeader title="Akun & Sinkronisasi" />
       <SyncSettingsCard />
 
-      {/* Backup */}
-      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Backup</Text>
+      <SectionHeader title="Backup" />
       <BackupSettingsCard />
 
-      {/* Cek Kesehatan Notifikasi */}
-      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Cek Kesehatan Notifikasi</Text>
-
-      {/* Status Notifikasi */}
-      <Card>
-        <View style={styles.healthRow}>
-          <Text style={{ color: colors.text, flex: 1 }}>🔔 Izin Notifikasi</Text>
-          <StatusBadge status={notifStatus} colors={colors} />
-        </View>
-        {notifStatus !== 'granted' && <Button title="Minta Izin" onPress={requestNotifPermission} variant="primary" />}
-      </Card>
-
-      {/* Exact Alarm */}
-      <Card>
-        <View style={styles.healthRow}>
-          <Text style={{ color: colors.text, flex: 1 }}>⏰ Alarm Tepat Waktu</Text>
-        </View>
-        <Text style={{ color: colors.textSecondary, fontSize: 13, marginBottom: 12 }}>
-          Pastikan izin “Alarm &amp; pengingat” aktif agar timer berbunyi tepat waktu.
-        </Text>
-        <Button title="Buka Pengaturan Sistem" onPress={() => Linking.openSettings()} variant="secondary" />
-      </Card>
-
-      {/* Battery */}
-      <Card>
-        <View style={styles.healthRow}>
-          <Text style={{ color: colors.text, flex: 1 }}>🔋 Baterai (Samsung)</Text>
-        </View>
-        <Text style={{ color: colors.textSecondary, fontSize: 13, marginBottom: 12 }}>
-          Atur app ke “Tidak dibatasi” agar timer berjalan di latar belakang.
-          {'\n'}Matikan “Alihkan app yang tidak digunakan ke tidur”.
-        </Text>
-        <Button title="Buka Pengaturan Baterai" onPress={openBatterySettings} variant="secondary" />
-      </Card>
+      <SectionHeader title="Cek Kesehatan Alarm" />
+      <AlarmHealthChecks />
     </ScrollView>
   );
 }
 
-function StatusBadge({ status, colors }: { status: PermissionStatus; colors: any }) {
-  const label =
-    status === 'granted' ? '✅ Aktif' : status === 'denied' ? '❌ Ditolak' : status === 'loading' ? '⏳' : '⚪ Belum';
-  const bgColor =
-    status === 'granted' ? colors.success + '30' : status === 'denied' ? colors.error + '30' : colors.surface;
-
-  return (
-    <View style={[styles.badge, { backgroundColor: bgColor }]}>
-      <Text style={{ color: colors.text, fontSize: 12 }}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  content: {
+    padding: tokens.spacing.md,
+    paddingBottom: tokens.spacing.xl * 2,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  themeButtons: {
+  themeRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: tokens.spacing.sm + tokens.spacing.xs,
   },
-  btnWrapper: {
+  themeTile: {
     flex: 1,
-  },
-  healthRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: tokens.spacing.xs + 2,
+    paddingVertical: tokens.spacing.md,
+    borderRadius: tokens.borderRadius.lg,
   },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+  themeLabel: {
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

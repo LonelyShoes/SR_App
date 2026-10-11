@@ -1,5 +1,5 @@
 import { Stack, router } from 'expo-router';
-import { ThemeProvider } from '../src/theme/ThemeProvider';
+import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import { db } from '../src/db/client';
 import migrations from '../src/db/migrations/migrations';
@@ -13,6 +13,9 @@ import { startWidgetAutoUpdate } from '../src/widgets/update';
 import { startSyncService } from '../src/features/sync/service';
 import { registerBackgroundSync, unregisterBackgroundSync } from '../src/features/sync/background';
 import { loadBackupSettings, runAutoBackupIfDue } from '../src/features/backup/service';
+import { tokens } from '../src/theme/tokens';
+import { useTimerWatcher } from '../src/features/timer/use-timer-watcher';
+import { AlarmOverlay } from '../src/features/timer/AlarmOverlay';
 
 // Configure notification handler at module level (before any component renders)
 setupNotificationHandler();
@@ -77,7 +80,28 @@ export default function Layout() {
 
   return (
     <ThemeProvider>
-      <Stack screenOptions={{ headerShown: false }}>
+      <AppStack />
+    </ThemeProvider>
+  );
+}
+
+/** Themed navigator plus the app-wide timer alarm. Rendered inside ThemeProvider. */
+function AppStack() {
+  const { colors } = useTheme();
+  useTimerWatcher();
+
+  return (
+    <>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          headerStyle: { backgroundColor: colors.background },
+          headerShadowVisible: false,
+          headerTintColor: colors.text,
+          headerTitleStyle: { ...tokens.typography.h3 },
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="pengaturan" options={{ headerShown: true, title: 'Pengaturan' }} />
         <Stack.Screen name="notula/[id]" options={{ headerShown: true, title: 'Notula' }} />
@@ -89,6 +113,7 @@ export default function Layout() {
         <Stack.Screen name="statistik" options={{ headerShown: true, title: 'Statistik' }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       </Stack>
-    </ThemeProvider>
+      <AlarmOverlay />
+    </>
   );
 }

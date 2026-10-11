@@ -37,7 +37,13 @@ type Props = {
 /** Add/edit a task: title, quadrant, due date/time, notes (spec 6.2). */
 export function TaskFormSheet({ visible, task, onClose }: Props) {
   return (
-    <Sheet visible={visible} onClose={onClose} title={task ? 'Edit Tugas' : 'Tambah Tugas'}>
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title={task ? 'Edit Tugas' : 'Tambah Tugas'}
+      icon="add_task"
+      subtitle="Tentukan kuadran agar prioritas jelas"
+    >
       {/* Keyed so the form resets whenever another task is opened */}
       {visible && <TaskForm key={task?.id ?? 'new'} task={task ?? null} onDone={onClose} />}
     </Sheet>
@@ -114,8 +120,8 @@ function TaskForm({ task, onDone }: { task: Task | null; onDone: () => void }) {
       <Field label="Catatan" value={notes} onChangeText={setNotes} multiline placeholder="Opsional" />
       {error && <Text style={{ color: colors.error, marginBottom: tokens.spacing.sm }}>{error}</Text>}
       <View style={{ gap: tokens.spacing.sm }}>
-        <Button title="Simpan" onPress={save} />
-        {task && <Button title="Hapus tugas" variant="danger" onPress={remove} />}
+        <Button title="Simpan" icon="check" size="lg" onPress={save} />
+        {task && <Button title="Hapus tugas" icon="delete" variant="danger" onPress={remove} />}
       </View>
     </View>
   );

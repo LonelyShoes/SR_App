@@ -1,153 +1,93 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Linking, Platform } from 'react-native';
-import { useTheme } from '../src/theme/ThemeProvider';
-import { Button } from '../src/components/Button';
-import { Card } from '../src/components/Card';
-import * as Notifications from 'expo-notifications';
+import React from 'react';
+import { Text, StyleSheet, ScrollView } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../src/theme/ThemeProvider';
+import { tokens } from '../src/theme/tokens';
+import { Button } from '../src/components/Button';
+import { IconBubble } from '../src/components/IconBubble';
+import { AlarmHealthChecks } from '../src/features/settings/AlarmHealthChecks';
 
-type PermissionStatus = 'granted' | 'denied' | 'undetermined' | 'loading';
+const FEATURES = [
+  { icon: 'grid_view', tone: 'q2', text: 'Prioritaskan tugas dengan Matrix 4Q' },
+  { icon: 'timer', tone: 'fokus', text: 'Fokus dengan timer yang berbunyi seperti alarm' },
+  { icon: 'description', tone: 'q4', text: 'Catat notula rapat dan ekspor ke PDF' },
+] as const;
 
 export default function Onboarding() {
   const { colors } = useTheme();
   const router = useRouter();
 
-  const [notifStatus, setNotifStatus] = useState<PermissionStatus>('loading');
-
-  useEffect(() => {
-    Notifications.getPermissionsAsync().then(({ status }) => setNotifStatus(status));
-  }, []);
-
-  const requestNotifPermission = async () => {
-    const { status } = await Notifications.requestPermissionsAsync();
-    setNotifStatus(status);
-  };
-
-  const openAlarmSettings = () => {
-    if (Platform.OS === 'android') {
-      // Open exact alarm settings (Android 12+)
-      Linking.openSettings();
-    }
-  };
-
-  const openBatterySettings = () => {
-    if (Platform.OS === 'android') {
-      // Open battery optimization settings
-      Linking.openSettings();
-    }
-  };
-
-  const allGranted = notifStatus === 'granted';
-
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{ padding: 16 }}
-    >
-      <Text style={[styles.title, { color: colors.text }]}>Selamat Datang di SR App!</Text>
-      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-        Untuk pengalaman terbaik, berikan izin berikut:
-      </Text>
+    <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.content}>
+      <Animated.View entering={FadeInDown.duration(400)} style={[styles.hero, { backgroundColor: colors.primarySoft }]}>
+        <IconBubble name="auto_awesome" size={64} filled />
+        <Text style={[styles.title, { color: colors.text }]}>Selamat datang di SR App</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          Asisten harian untuk tugas, rapat, dan fokus.
+        </Text>
+      </Animated.View>
 
-      {/* Notification Permission */}
-      <Card>
-        <View style={styles.permRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.permTitle, { color: colors.text }]}>🔔 Notifikasi</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Untuk alarm timer dan pengingat rapat.</Text>
-          </View>
-          <StatusBadge status={notifStatus} colors={colors} />
-        </View>
-        {notifStatus !== 'granted' && (
-          <Button title="Izinkan Notifikasi" onPress={requestNotifPermission} variant="primary" />
-        )}
-      </Card>
+      {FEATURES.map((f, i) => (
+        <Animated.View key={f.text} entering={FadeInDown.delay(120 + i * 80).duration(350)} style={styles.feature}>
+          <IconBubble name={f.icon} tone={f.tone} size={40} />
+          <Text style={[styles.featureText, { color: colors.text }]}>{f.text}</Text>
+        </Animated.View>
+      ))}
 
-      {/* Exact Alarm */}
-      <Card>
-        <View style={styles.permRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.permTitle, { color: colors.text }]}>⏰ Alarm Tepat Waktu</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-              Agar timer dan pengingat rapat berbunyi tepat waktu.
-            </Text>
-          </View>
-        </View>
-        <Button title="Buka Pengaturan Alarm" onPress={openAlarmSettings} variant="secondary" />
-      </Card>
+      <Text style={[styles.section, { color: colors.text }]}>Izinkan agar alarm berbunyi</Text>
+      <AlarmHealthChecks />
 
-      {/* Battery Optimization */}
-      <Card>
-        <View style={styles.permRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.permTitle, { color: colors.text }]}>🔋 Baterai (Samsung/One UI)</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-              Atur app ke “Tidak dibatasi” agar timer tetap berjalan di latar belakang.
-              {'\n'}Matikan “Alihkan app yang tidak digunakan ke tidur”.
-            </Text>
-          </View>
-        </View>
-        <Button title="Buka Pengaturan Baterai" onPress={openBatterySettings} variant="secondary" />
-      </Card>
-
-      <View style={{ marginTop: 24 }}>
-        <Button
-          title={allGranted ? 'Mulai Pakai SR App ✨' : 'Lewati untuk sekarang'}
-          onPress={() => router.replace('/(tabs)')}
-          variant={allGranted ? 'primary' : 'secondary'}
-        />
-      </View>
+      <Button
+        title="Mulai Pakai SR App"
+        icon="arrow_forward"
+        size="lg"
+        onPress={() => router.replace('/(tabs)')}
+        style={styles.cta}
+      />
     </ScrollView>
   );
 }
 
-function StatusBadge({ status, colors }: { status: PermissionStatus; colors: any }) {
-  const label =
-    status === 'granted'
-      ? '✅ Diizinkan'
-      : status === 'denied'
-        ? '❌ Ditolak'
-        : status === 'loading'
-          ? '⏳'
-          : '⚪ Belum';
-  const bgColor =
-    status === 'granted' ? colors.success + '30' : status === 'denied' ? colors.error + '30' : colors.surface;
-
-  return (
-    <View style={[styles.badge, { backgroundColor: bgColor }]}>
-      <Text style={{ color: colors.text, fontSize: 12 }}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  content: {
+    padding: tokens.spacing.md,
+    paddingTop: tokens.spacing.xl * 1.5,
+    paddingBottom: tokens.spacing.xl,
+  },
+  hero: {
+    alignItems: 'center',
+    borderRadius: tokens.borderRadius.xl,
+    padding: tokens.spacing.lg,
+    gap: tokens.spacing.sm,
+    marginBottom: tokens.spacing.lg,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    marginTop: 16,
+    ...tokens.typography.h1,
+    textAlign: 'center',
+    marginTop: tokens.spacing.sm,
   },
   subtitle: {
-    fontSize: 15,
-    marginBottom: 24,
+    ...tokens.typography.body,
+    textAlign: 'center',
   },
-  permRow: {
+  feature: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: tokens.spacing.sm + tokens.spacing.xs,
+    marginBottom: tokens.spacing.sm + tokens.spacing.xs,
   },
-  permTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
+  featureText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
   },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginLeft: 8,
+  section: {
+    ...tokens.typography.h3,
+    marginTop: tokens.spacing.lg,
+    marginBottom: tokens.spacing.sm + tokens.spacing.xs,
+  },
+  cta: {
+    marginTop: tokens.spacing.lg,
   },
 });

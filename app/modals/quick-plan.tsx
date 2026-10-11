@@ -1,15 +1,30 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
-import { Stack, router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView } from 'react-native';
+import Animated, {
+  FadeInDown,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
+import { router } from 'expo-router';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { tokens } from '../../src/theme/tokens';
 import { Button } from '../../src/components/Button';
 import { Card } from '../../src/components/Card';
+import { Field, FormRow, Segmented } from '../../src/components/Form';
+import { Tap } from '../../src/components/Tap';
+import { Icon } from '../../src/components/Icon';
 import { parseQuickPlan } from '../../src/lib/date-parser-id';
 import { useSpeechInput } from '../../src/features/voice/use-speech-input';
 import { Quadrant, QuickPlanForm, draftToForm, saveQuickPlan } from '../../src/features/voice/quick-plan';
 
-const QUADRANTS: Quadrant[] = ['Q1', 'Q2', 'Q3', 'Q4'];
+const QUADRANTS = (['Q1', 'Q2', 'Q3', 'Q4'] as Quadrant[]).map((q) => ({ value: q, label: q }));
+const KINDS = [
+  { value: 'task' as const, label: 'Tugas' },
+  { value: 'meeting' as const, label: 'Rapat' },
+];
 
 export default function QuickPlan() {
   const { colors } = useTheme();
@@ -28,6 +43,21 @@ export default function QuickPlan() {
     process(finalText);
   });
 
+  // Expanding ring around the mic while listening
+  const ripple = useSharedValue(0);
+  useEffect(() => {
+    if (!speech.listening) {
+      cancelAnimation(ripple);
+      ripple.set(0);
+      return;
+    }
+    ripple.set(withRepeat(withTiming(1, { duration: 1200 }), -1));
+  }, [speech.listening, ripple]);
+  const rippleStyle = useAnimatedStyle(() => ({
+    opacity: 1 - ripple.get(),
+    transform: [{ scale: 1 + ripple.get() * 0.6 }],
+  }));
+
   const update = (patch: Partial<QuickPlanForm>) => setForm((f) => (f ? { ...f, ...patch } : f));
 
   const handleSave = async () => {
@@ -42,32 +72,24 @@ export default function QuickPlan() {
     router.back();
   };
 
-  const inputStyle = [styles.input, { color: colors.text, borderColor: colors.border }];
-  const segment = (active: boolean) => [
-    styles.segmentBtn,
-    { borderColor: colors.border, backgroundColor: active ? colors.primary : colors.surface },
-  ];
-  const segmentText = (active: boolean) => ({ color: active ? colors.onPrimary : colors.text });
+  const micColor = speech.listening ? colors.error : colors.primary;
+  const micSoft = speech.listening ? colors.errorSoft : colors.primarySoft;
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior="height">
-      <Stack.Screen
-        options={{
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.text,
-        }}
-      />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity
-          onPress={speech.listening ? speech.stop : speech.start}
-          style={[styles.mic, { backgroundColor: speech.listening ? colors.error : colors.primary }]}
-          accessibilityRole="button"
-          accessibilityLabel={speech.listening ? 'Berhenti merekam' : 'Mulai merekam'}
-        >
-          <Text style={[styles.micIcon, { color: speech.listening ? colors.onError : colors.onPrimary }]}>
-            {speech.listening ? '■' : '🎤'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.micWrap}>
+          <Animated.View style={[styles.ripple, { backgroundColor: micSoft }, rippleStyle]} />
+          <Tap
+            onPress={speech.listening ? speech.stop : speech.start}
+            scaleTo={0.9}
+            style={[styles.mic, { backgroundColor: micColor }]}
+            accessibilityRole="button"
+            accessibilityLabel={speech.listening ? 'Berhenti merekam' : 'Mulai merekam'}
+          >
+            <Icon name={speech.listening ? 'stop' : 'mic'} size={44} color={colors.onPrimary} />
+          </Tap>
+        </View>
         <Text style={[styles.hint, { color: colors.textSecondary }]}>
           {speech.listening
             ? speech.interim || 'Mendengarkan…'
@@ -75,145 +97,102 @@ export default function QuickPlan() {
         </Text>
         {speech.error && <Text style={[styles.hint, { color: colors.error }]}>{speech.error}</Text>}
 
-        <Text style={[styles.label, { color: colors.text }]}>Teks</Text>
-        <TextInput
+        <Field
+          label="Teks"
           value={transcript}
           onChangeText={setTranscript}
           onEndEditing={() => process(transcript)}
           multiline
           placeholder="Atau ketik di sini"
-          placeholderTextColor={colors.textSecondary}
-          style={[inputStyle, styles.multiline]}
         />
-        <Button title="Proses teks" variant="secondary" onPress={() => process(transcript)} />
+        <Button title="Proses teks" icon="auto_awesome" variant="secondary" onPress={() => process(transcript)} />
 
         {form && (
-          <Card style={styles.confirm}>
-            <Text style={[tokens.typography.h3, { color: colors.text, marginBottom: tokens.spacing.md }]}>
-              Periksa sebelum simpan
-            </Text>
+          <Animated.View entering={FadeInDown.duration(300)}>
+            <Card style={styles.confirm}>
+              <Text style={[tokens.typography.h3, { color: colors.text, marginBottom: tokens.spacing.md }]}>
+                Periksa sebelum simpan
+              </Text>
 
-            <View style={styles.row}>
-              {(['task', 'meeting'] as const).map((kind) => (
-                <TouchableOpacity key={kind} style={segment(form.kind === kind)} onPress={() => update({ kind })}>
-                  <Text style={segmentText(form.kind === kind)}>{kind === 'task' ? 'Tugas' : 'Rapat'}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={[styles.label, { color: colors.text }]}>Judul</Text>
-            <TextInput value={form.title} onChangeText={(title) => update({ title })} style={inputStyle} />
-
-            <View style={styles.row}>
-              <View style={styles.flex}>
-                <Text style={[styles.label, { color: colors.text }]}>
-                  {form.kind === 'task' ? 'Tenggat' : 'Tanggal'}
-                </Text>
-                <TextInput
+              <Segmented options={KINDS} value={form.kind} onChange={(kind) => update({ kind })} />
+              <Field label="Judul" value={form.title} onChangeText={(title) => update({ title })} />
+              <FormRow>
+                <Field
+                  flex
+                  label={form.kind === 'task' ? 'Tenggat' : 'Tanggal'}
                   value={form.dateText}
                   onChangeText={(dateText) => update({ dateText })}
                   placeholder="hh/bb/tttt"
-                  placeholderTextColor={colors.textSecondary}
                   keyboardType="numbers-and-punctuation"
-                  style={inputStyle}
                 />
-              </View>
-              <View style={styles.flex}>
-                <Text style={[styles.label, { color: colors.text }]}>Jam</Text>
-                <TextInput
+                <Field
+                  flex
+                  label="Jam"
                   value={form.timeText}
                   onChangeText={(timeText) => update({ timeText })}
                   placeholder={form.kind === 'task' ? 'opsional' : '09:00'}
-                  placeholderTextColor={colors.textSecondary}
                   keyboardType="numbers-and-punctuation"
-                  style={inputStyle}
                 />
-              </View>
-            </View>
+              </FormRow>
 
-            {form.kind === 'task' && (
-              <>
-                <Text style={[styles.label, { color: colors.text }]}>Kuadran</Text>
-                <View style={styles.row}>
-                  {QUADRANTS.map((q) => (
-                    <TouchableOpacity
-                      key={q}
-                      style={segment(form.quadrant === q)}
-                      onPress={() => update({ quadrant: q })}
-                    >
-                      <Text style={segmentText(form.quadrant === q)}>{q}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </>
-            )}
+              {form.kind === 'task' && (
+                <Segmented
+                  label="Kuadran"
+                  options={QUADRANTS}
+                  value={form.quadrant}
+                  onChange={(quadrant) => update({ quadrant })}
+                />
+              )}
 
-            {saveError && <Text style={[styles.hint, { color: colors.error }]}>{saveError}</Text>}
-            <Button
-              title={form.kind === 'task' ? 'Simpan Tugas' : 'Simpan Rapat'}
-              onPress={handleSave}
-              loading={saving}
-            />
-          </Card>
+              {saveError && <Text style={[styles.hint, { color: colors.error }]}>{saveError}</Text>}
+              <Button
+                title={form.kind === 'task' ? 'Simpan Tugas' : 'Simpan Rapat'}
+                icon="check"
+                size="lg"
+                onPress={handleSave}
+                loading={saving}
+              />
+            </Card>
+          </Animated.View>
         )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
+const MIC = 104;
+
 const styles = StyleSheet.create({
   content: {
     padding: tokens.spacing.md,
     paddingBottom: tokens.spacing.xl,
   },
-  mic: {
-    width: 96,
-    height: 96,
-    borderRadius: tokens.borderRadius.full,
+  micWrap: {
+    width: MIC * 1.7,
+    height: MIC * 1.7,
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: tokens.spacing.md,
   },
-  micIcon: {
-    fontSize: 36,
+  ripple: {
+    position: 'absolute',
+    width: MIC,
+    height: MIC,
+    borderRadius: MIC / 2,
+  },
+  mic: {
+    width: MIC,
+    height: MIC,
+    borderRadius: MIC / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   hint: {
     ...tokens.typography.caption,
     textAlign: 'center',
     marginBottom: tokens.spacing.md,
   },
-  label: {
-    ...tokens.typography.caption,
-    fontWeight: 'bold',
-    marginBottom: tokens.spacing.sm,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: tokens.borderRadius.md,
-    padding: tokens.spacing.sm + tokens.spacing.xs,
-    marginBottom: tokens.spacing.md,
-  },
-  multiline: {
-    minHeight: 72,
-    textAlignVertical: 'top',
-  },
   confirm: {
     marginTop: tokens.spacing.lg,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: tokens.spacing.sm,
-    marginBottom: tokens.spacing.md,
-  },
-  flex: {
-    flex: 1,
-  },
-  segmentBtn: {
-    flex: 1,
-    padding: tokens.spacing.sm,
-    borderWidth: 1,
-    borderRadius: tokens.borderRadius.md,
-    alignItems: 'center',
   },
 });

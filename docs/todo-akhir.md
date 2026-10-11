@@ -4,8 +4,10 @@ Dicatat 2026-10-11 setelah Fase 3. Kerjakan sebelum/saat Fase 10 (Polishing & Ri
 
 - [x] Konfigurasi Prettier (`npm run format`)
 - [x] Development build + APK produksi (versionCode 3) dibuat di EAS; tinggal dipasang di Samsung A14 5G (lihat docs/uji-hp.md)
-- [ ] Uji bunyi alarm timer: layar mati, app ditutup/di-swipe, mode hemat baterai (Fase 3)
-- [ ] Finalkan keputusan channel vs native module di `docs/decisions.md` #1 berdasarkan hasil uji (Fase 3)
+- [ ] Uji ulang alarm timer native (APK baru): layar mati, app di-swipe, hemat daya, layar alarm di atas lock screen, tombol Matikan (Fase 3)
+- [x] Keputusan #1 difinalkan: native module `modules/sr-alarm`, karena hasil uji menunjukkan alarm hanya berupa notifikasi
+- [ ] Uji ulang ekspor PDF: Bagikan dan Simpan ke folder. Bila masih gagal, kirim teks errornya (kini memuat kode)
+- [ ] Tinjau tampilan pastel baru di HP (tema terang & gelap)
 - [x] Commit pertama + push ke github.com/LonelyShoes/SR_App (branch `main`), project EAS @whitesr/sr-app terhubung lewat `owner` + `projectId`
 - [x] Lokasi route disamakan: `AGENTS.md` kini menyebut `app/`
 - [x] Lampiran notula: `expo-document-picker` disetujui dan sudah dipasang (Fase 4)

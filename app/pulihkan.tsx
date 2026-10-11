@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { View, Text, FlatList, ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { tokens } from '../src/theme/tokens';
 import { Card } from '../src/components/Card';
+import { Icon } from '../src/components/Icon';
+import { IconBubble } from '../src/components/IconBubble';
 import { EmptyState } from '../src/components/EmptyState';
 import { CloudBackup, downloadCloudBackup, listCloudBackups } from '../src/features/backup/service';
 import { confirmRestore } from '../src/features/backup/confirm-restore';
@@ -37,13 +39,13 @@ export default function Pulihkan() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <Stack.Screen options={{ headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
       {error ? (
-        <EmptyState title="Gagal memuat backup" description={error} />
+        <EmptyState icon="cloud_off" tone="error" title="Gagal memuat backup" description={error} />
       ) : !backups ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: tokens.spacing.xl }} />
       ) : backups.length === 0 ? (
         <EmptyState
+          icon="backup"
           title="Belum ada backup"
           description="Backup cloud dibuat otomatis setiap hari saat kamu masuk ke akun."
         />
@@ -58,8 +60,12 @@ export default function Pulihkan() {
             </Text>
           }
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => open(item)} disabled={opening !== null} activeOpacity={0.7}>
-              <Card style={styles.row}>
+            <Card
+              onPress={opening === null ? () => open(item) : undefined}
+              accessibilityLabel={`Pulihkan backup ${item.name}`}
+            >
+              <View style={styles.row}>
+                <IconBubble name="restore" tone="santai" />
                 <View style={styles.flex}>
                   <Text style={{ color: colors.text, fontWeight: 'bold' }}>
                     {item.createdAt
@@ -72,9 +78,13 @@ export default function Pulihkan() {
                     </Text>
                   )}
                 </View>
-                {opening === item.path && <ActivityIndicator color={colors.primary} />}
-              </Card>
-            </TouchableOpacity>
+                {opening === item.path ? (
+                  <ActivityIndicator color={colors.primary} />
+                ) : (
+                  <Icon name="chevron_right" size={22} color={colors.textSecondary} />
+                )}
+              </View>
+            </Card>
           )}
         />
       )}
@@ -93,6 +103,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: tokens.spacing.sm + tokens.spacing.xs,
   },
   flex: {
     flex: 1,

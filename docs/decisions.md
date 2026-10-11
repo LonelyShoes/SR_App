@@ -2,18 +2,24 @@
 
 ## 1. Timer Alarm: Notification Channel vs Native Module
 
-**Tanggal:** 2026-10-11
-**Keputusan:** Menggunakan `expo-notifications` dengan Android Notification Channel `timer-alarm` (importance MAX, bypassDnd: true).
+**Tanggal:** 2026-10-11 (diperbarui setelah uji di Samsung A14 5G)
+**Keputusan awal:** `expo-notifications` dengan channel `timer-alarm` (importance MAX).
+**Hasil uji:** alarm timer hanya muncul sebagai notifikasi biasa: bunyi sekali dengan suara notifikasi, tidak seperti alarm.
+**Keputusan final:** native module lokal `modules/sr-alarm` (Expo Modules API, Android saja).
 
-**Alasan:**
-- `expo-notifications` channel dengan `AndroidImportance.MAX` dan `bypassDnd: true` sudah cukup untuk menampilkan notifikasi bertipe alarm (heads-up notification, muncul di lockscreen, berbunyi).
-- Notification channel MAX pada Android secara otomatis menggunakan perilaku heads-up notification yang muncul di atas layar lain.
-- Belum diperlukan full-screen intent atau native module karena channel MAX sudah memadai untuk kebutuhan timer alarm.
-- Jika saat pengujian di Samsung Galaxy A14 5G notifikasi tidak berbunyi saat layar mati atau app di-swipe, akan dipertimbangkan pembuatan native module via Expo Modules API untuk full-screen alarm intent.
+**Cara kerja:**
+- `AlarmManager.setAlarmClock` menjadwalkan alarm tepat waktu, tetap jalan saat Doze, layar mati, atau app di-swipe. Tanpa izin alarm tepat, jatuh ke `setAndAllowWhileIdle`.
+- `AlarmReceiver` memasang notifikasi kategori ALARM di channel `timer-alarm-ring`:
+  - nada alarm pengguna (`DEFAULT_ALARM_ALERT_URI`, `USAGE_ALARM`, ikut volume alarm);
+  - `FLAG_INSISTENT`, sehingga bunyi dan getar berulang sampai dimatikan;
+  - tombol **Matikan**;
+  - otomatis berhenti setelah 3 menit.
+- Full-screen intent membuka `AlarmActivity` (native, `showWhenLocked` + `turnScreenOn`) di atas layar kunci, dengan tombol **Matikan** dan **Buka SR App**. Activity native dipilih agar muncul seketika tanpa menunggu JS dimuat.
+- Saat app terbuka, `AlarmOverlay` (React) menampilkan layar alarm dengan tombol Matikan dan "Mulai Rehat/Fokus". `useTimerWatcher` menyelesaikan sesi dari layar mana pun.
+- `stop()` (berhenti manual) membatalkan alarm. `complete()` (waktu habis) membiarkan alarm berbunyi.
+- Fallback ke `expo-notifications` bila modul tidak tersedia (Expo Go, test, iOS).
 
-**Risiko:**
-- Samsung/One UI mungkin membatasi notifikasi di background. Mitigasi: onboarding screen memandu pengguna untuk menonaktifkan battery optimization.
-- `bypassDnd` hanya berlaku jika pengguna mengizinkan channel untuk melewati DND.
+**Izin:** `SCHEDULE_EXACT_ALARM`, `USE_EXACT_ALARM` (otomatis diberikan untuk app alarm/timer di Android 13+), `USE_FULL_SCREEN_INTENT`. Status keduanya tampil di Pengaturan → Cek Kesehatan Alarm, dengan tombol ke halaman izinnya.
 
 ## 2. Timer Accuracy: end_at Timestamp Approach
 
@@ -174,3 +180,36 @@ Audit kriteria spec terhadap kode sebelum build produksi menemukan bahwa sebagia
   - Preset disimpan sebagai ID agar perubahan durasi langsung terpakai.
 - **Input tanggal/jam** memakai teks `hh/bb/tttt` dan `JJ:mm` (`src/lib/date-input.ts`), tanpa dependency date-picker native di luar tabel stack.
 - **Keterbatasan:** status izin "Alarm & pengingat" dan pengecualian baterai tidak bisa dibaca dari JS tanpa native module. Layar Cek Kesehatan menampilkan status izin notifikasi dan tombol menuju pengaturan untuk dua izin lainnya.
+
+## 15. Desain Pastel dan Interaksi
+
+**Tanggal:** 2026-10-11
+**Keputusan:** UI dirombak ke palet pastel mengikuti referensi pengguna (99designs, "Promise Serves"): kartu tanpa border dengan sudut membulat dan bayangan lembut, ikon garis, tile horizontal, bottom sheet berikon, dan tombol pill.
+
+- **Token:** setiap aksen (`primary` sage, `q1` rose, `q2` mint, `q3` butter, `q4` lavender, `fokus`/`rehat`/`santai`) punya dua tingkat:
+  - `xxx` tua untuk teks, ikon, dan tombol;
+  - `xxxSoft` pastel untuk latar tile dan chip.
+- **Kontras:** semua pasangan diperiksa WCAG AA ≥ 4.5:1, yaitu aksen di atas background/surface/soft-nya sendiri dan `onPrimary` di atas aksen, di tema terang dan gelap.
+- **Ikon:** `expo-symbols` (Material Symbols, font ikut dalam bundle sehingga jalan offline), sudah terpasang, tanpa dependency baru. Emoji di UI diganti ikon.
+- **Interaksi:**
+  - `Tap` (Reanimated) mengecil saat ditekan;
+  - daftar muncul dengan `FadeInDown` berurutan;
+  - dial timer dari 60 tick yang menyala sesuai sisa waktu dan "bernapas" saat berjalan;
+  - mikrofon Quick Plan beriak saat mendengarkan;
+  - tombol + mengambang di Matrix.
+- **Reanimated + React Compiler:** shared value diubah lewat `.set()`/`.get()`, bukan `.value =`, karena aturan lint `react-hooks/immutability`.
+- **Warna di luar token:** `AlarmActivity.kt` menyalin nilai token karena kode native tidak bisa membaca `tokens.ts`.
+
+## 16. Ekspor PDF Notula
+
+**Tanggal:** 2026-10-11
+**Masalah:** pengguna melaporkan "gagal mengekspor PDF". Pesan error belum didapat.
+**Dugaan kuat:** `expo-sharing` di Android hanya menerima satu permintaan share sekaligus (`pendingPromise`). Bila hasil share sebelumnya (misalnya saat membuka lampiran) tidak kembali, semua share berikutnya gagal.
+**Perubahan:**
+- PDF dirender dulu (`renderMinutesPdf`) lalu diberi nama `Notula <judul> <yyyy-MM-dd>.pdf` di cache.
+- Pengguna lalu memilih di bottom sheet:
+  - **Bagikan:** share sheet. Bila gagal, jatuh ke dialog cetak sistem, yang punya "Simpan sebagai PDF".
+  - **Simpan ke folder:** Storage Access Framework (`Directory.pickDirectoryAsync`) menulis langsung ke folder pilihan, misalnya Download, tanpa `expo-sharing`.
+- Pesan error kini menyertakan kode native agar penyebabnya bisa dilacak.
+- Header PDF memakai warna pastel tema terang.
+

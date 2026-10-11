@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import * as Notifications from 'expo-notifications';
 import { db } from '../../db/client';
 import { timer_sessions } from '../../db/schema';
 import * as Crypto from 'expo-crypto';
+import { cancelTimerAlarm, dismissTimerAlarm, scheduleTimerAlarm } from './alarm';
 
 export type TimerKind = 'fokus' | 'rehat' | 'santai';
 export type TimerStatus = 'idle' | 'running' | 'paused';
@@ -15,15 +15,55 @@ interface TimerState {
   pausedRemaining: number; // remaining ms when paused
   startedAt: number | null; // epoch ms when session started
   presetId: string | null;
-  alarmNotificationId: string | null;
+  alarmId: string | null;
+  /** The last session ended on its own and its alarm is (or may be) ringing */
+  ringing: boolean;
 
   // Actions
   start: (kind: TimerKind, durationSec: number, presetId?: string | null) => Promise<void>;
   pause: () => Promise<void>;
   resume: () => Promise<void>;
+  /** Stop early (manual); cancels the pending alarm */
   stop: () => Promise<void>;
+  /** The countdown reached zero; the alarm keeps ringing until dismissed */
+  complete: () => Promise<void>;
+  /** Silence the alarm */
+  dismissAlarm: () => void;
   tick: () => number; // returns remaining seconds
 }
+
+const recordSession = async (
+  state: Pick<TimerState, 'startedAt' | 'kind' | 'plannedSec' | 'presetId'>,
+  completed: boolean,
+) => {
+  if (!state.startedAt) return;
+  const now = Date.now();
+  try {
+    await db.insert(timer_sessions).values({
+      id: Crypto.randomUUID(),
+      kind: state.kind,
+      planned_sec: state.plannedSec,
+      started_at: state.startedAt,
+      ended_at: now,
+      completed: completed ? 1 : 0,
+      actual_sec: Math.round((now - state.startedAt) / 1000),
+      preset_id: state.presetId,
+      created_at: now,
+      updated_at: now,
+      dirty: 1,
+    });
+  } catch (e) {
+    console.error('Failed to record timer session:', e);
+  }
+};
+
+const IDLE = {
+  status: 'idle' as const,
+  endAt: null,
+  pausedRemaining: 0,
+  startedAt: null,
+  alarmId: null,
+};
 
 export const useTimerStore = create<TimerState>((set, get) => ({
   status: 'idle',
@@ -33,35 +73,15 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   pausedRemaining: 0,
   startedAt: null,
   presetId: null,
-  alarmNotificationId: null,
+  alarmId: null,
+  ringing: false,
 
   start: async (kind, durationSec, presetId = null) => {
+    // A new session silences the previous alarm
+    if (get().ringing) get().dismissAlarm();
     const now = Date.now();
     const endAt = now + durationSec * 1000;
-
-    // Schedule alarm notification at endAt
-    let notifId: string | null = null;
-    try {
-      notifId = await Notifications.scheduleNotificationAsync({
-        content: {
-          title:
-            kind === 'fokus'
-              ? '⏰ Waktu Fokus Selesai!'
-              : kind === 'rehat'
-                ? '☕ Rehat Selesai!'
-                : '🌴 Santai Selesai!',
-          body: `Sesi ${kind} ${Math.floor(durationSec / 60)} menit telah berakhir.`,
-          data: { type: 'timer-alarm', url: '/timer' },
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: new Date(endAt),
-          channelId: 'timer-alarm',
-        },
-      });
-    } catch (e) {
-      console.warn('Failed to schedule timer alarm:', e);
-    }
+    const alarmId = await scheduleTimerAlarm(kind, endAt, durationSec);
 
     set({
       status: 'running',
@@ -71,114 +91,43 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       startedAt: now,
       pausedRemaining: 0,
       presetId,
-      alarmNotificationId: notifId,
+      alarmId,
     });
   },
 
   pause: async () => {
-    const { endAt, alarmNotificationId } = get();
+    const { endAt, alarmId } = get();
     if (!endAt) return;
-
-    const remaining = Math.max(0, endAt - Date.now());
-
-    // Cancel scheduled alarm
-    if (alarmNotificationId) {
-      await Notifications.cancelScheduledNotificationAsync(alarmNotificationId);
-    }
-
-    set({
-      status: 'paused',
-      endAt: null,
-      pausedRemaining: remaining,
-      alarmNotificationId: null,
-    });
+    await cancelTimerAlarm(alarmId);
+    set({ status: 'paused', endAt: null, pausedRemaining: Math.max(0, endAt - Date.now()), alarmId: null });
   },
 
   resume: async () => {
-    const { pausedRemaining, kind } = get();
+    const { pausedRemaining, kind, plannedSec } = get();
     if (pausedRemaining <= 0) return;
-
-    const now = Date.now();
-    const endAt = now + pausedRemaining;
-
-    // Re-schedule alarm notification
-    let notifId: string | null = null;
-    try {
-      notifId = await Notifications.scheduleNotificationAsync({
-        content: {
-          title:
-            kind === 'fokus'
-              ? '⏰ Waktu Fokus Selesai!'
-              : kind === 'rehat'
-                ? '☕ Rehat Selesai!'
-                : '🌴 Santai Selesai!',
-          body: `Sesi ${kind} telah berakhir.`,
-          data: { type: 'timer-alarm', url: '/timer' },
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: new Date(endAt),
-          channelId: 'timer-alarm',
-        },
-      });
-    } catch (e) {
-      console.warn('Failed to schedule timer alarm:', e);
-    }
-
-    set({
-      status: 'running',
-      endAt,
-      pausedRemaining: 0,
-      alarmNotificationId: notifId,
-    });
+    const endAt = Date.now() + pausedRemaining;
+    const alarmId = await scheduleTimerAlarm(kind, endAt, plannedSec);
+    set({ status: 'running', endAt, pausedRemaining: 0, alarmId });
   },
 
   stop: async () => {
-    const { startedAt, kind, plannedSec, endAt, alarmNotificationId, presetId, status } = get();
+    const state = get();
+    await cancelTimerAlarm(state.alarmId);
+    const finished = state.endAt !== null && state.endAt <= Date.now();
+    await recordSession(state, finished);
+    set(IDLE);
+  },
 
-    // Cancel alarm notification if still pending
-    if (alarmNotificationId) {
-      try {
-        await Notifications.cancelScheduledNotificationAsync(alarmNotificationId);
-      } catch {
-        // Already fired or cancelled
-      }
-    }
+  complete: async () => {
+    const state = get();
+    if (state.status !== 'running') return;
+    set({ ...IDLE, ringing: true });
+    await recordSession(state, true);
+  },
 
-    // Record session if timer was started
-    if (startedAt) {
-      const now = Date.now();
-      const actualMs = now - startedAt;
-      const actualSec = Math.round(actualMs / 1000);
-      // completed = 1 if the timer ran out on its own (endAt <= now), 0 if manually stopped
-      const completed = (endAt !== null && endAt <= now) || status === 'idle' ? 1 : 0;
-
-      try {
-        await db.insert(timer_sessions).values({
-          id: Crypto.randomUUID(),
-          kind,
-          planned_sec: plannedSec,
-          started_at: startedAt,
-          ended_at: now,
-          completed,
-          actual_sec: actualSec,
-          preset_id: presetId,
-          created_at: now,
-          updated_at: now,
-          dirty: 1,
-        });
-      } catch (e) {
-        console.error('Failed to record timer session:', e);
-      }
-    }
-
-    set({
-      status: 'idle',
-      endAt: null,
-      pausedRemaining: 0,
-      startedAt: null,
-      alarmNotificationId: null,
-    });
+  dismissAlarm: () => {
+    dismissTimerAlarm();
+    set({ ringing: false });
   },
 
   tick: () => {

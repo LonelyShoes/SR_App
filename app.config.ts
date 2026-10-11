@@ -73,18 +73,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         // Small status-bar icon must be white on transparent
         icon: './assets/images/notification-icon.png',
-        color: '#1A6FC9', // tokens.colors.light.primary
+        color: '#4F6838', // tokens.colors.light.primary
       },
     ],
     [
       'expo-splash-screen',
       {
         // Matches tokens background/glyph for light and dark system themes
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#F7F5F0',
         image: './assets/images/splash-icon.png',
         imageWidth: 160,
         dark: {
-          backgroundColor: '#121212',
+          backgroundColor: '#16171A',
           image: './assets/images/splash-icon-dark.png',
         },
       },

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Stack } from 'expo-router';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { format, parseISO } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { useTheme } from '../src/theme/ThemeProvider';
-import { tokens } from '../src/theme/tokens';
+import { tokens, Accent } from '../src/theme/tokens';
 import { Card } from '../src/components/Card';
+import { Segmented } from '../src/components/Form';
+import { Icon, IconName } from '../src/components/Icon';
 import { BarChart } from '../src/components/BarChart';
 import { useTablesVersion } from '../src/db/use-tables-version';
 import { loadStats, Stats, StatsRange } from '../src/features/stats/repository';
@@ -41,31 +42,26 @@ export default function Statistik() {
 
   return (
     <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
-
-      <View style={[styles.segmented, { backgroundColor: colors.surface }]}>
-        {RANGES.map((r) => (
-          <TouchableOpacity
-            key={r}
-            style={[styles.segmentBtn, range === r && { backgroundColor: colors.primary }]}
-            onPress={() => setRange(r)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: range === r }}
-          >
-            <Text style={{ color: range === r ? colors.onPrimary : colors.text, fontWeight: 'bold' }}>{r} hari</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <Segmented
+        options={RANGES.map((r) => ({ value: String(r), label: `${r} hari` }))}
+        value={String(range)}
+        onChange={(v) => setRange(Number(v) as StatsRange)}
+      />
 
       {!stats ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: tokens.spacing.xl }} />
       ) : (
         <>
           <View style={styles.tiles}>
-            <Tile label="Total fokus" value={formatDuration(stats.totalFocusSec)} />
-            <Tile label="Rata-rata sesi fokus" value={formatDuration(stats.avgFocusSec)} />
-            <Tile label="Streak saat ini" value={`${stats.streak.current} hari`} />
-            <Tile label="Streak terpanjang" value={`${stats.streak.longest} hari`} />
+            <Tile icon="psychology" tone="fokus" label="Total fokus" value={formatDuration(stats.totalFocusSec)} />
+            <Tile icon="timer" tone="santai" label="Rata-rata sesi" value={formatDuration(stats.avgFocusSec)} />
+            <Tile
+              icon="local_fire_department"
+              tone="q3"
+              label="Streak saat ini"
+              value={`${stats.streak.current} hari`}
+            />
+            <Tile icon="emoji_events" tone="q2" label="Streak terpanjang" value={`${stats.streak.longest} hari`} />
           </View>
 
           <Card>
@@ -73,7 +69,7 @@ export default function Statistik() {
             <Text style={{ color: colors.text }}>
               {stats.sessionsCompleted} selesai · {stats.sessionsTotal - stats.sessionsCompleted} dibatalkan
             </Text>
-            <View style={[styles.track, { backgroundColor: colors.border }]}>
+            <View style={[styles.track, { backgroundColor: colors.surfaceAlt }]}>
               <View style={{ width: `${stats.completionPct}%`, height: '100%', backgroundColor: colors.success }} />
             </View>
             <Text style={{ color: colors.textSecondary }}>Tingkat penyelesaian {stats.completionPct}%</Text>
@@ -101,7 +97,7 @@ export default function Statistik() {
                   return (
                     <View key={k.kind} style={styles.kindRow}>
                       <Text style={[styles.kindLabel, { color: colors.text }]}>{KIND_LABELS[k.kind] ?? k.kind}</Text>
-                      <View style={[styles.track, styles.flex, { backgroundColor: colors.border }]}>
+                      <View style={[styles.track, styles.flex, { backgroundColor: colors.surfaceAlt }]}>
                         <View
                           style={{
                             width: `${pct}%`,
@@ -150,11 +146,12 @@ export default function Statistik() {
   );
 }
 
-function Tile({ label, value }: { label: string; value: string }) {
+function Tile({ icon, tone, label, value }: { icon: IconName; tone: Accent; label: string; value: string }) {
   const { colors } = useTheme();
   return (
-    <Card style={styles.tile}>
-      <Text style={[tokens.typography.h3, { color: colors.text }]}>{value}</Text>
+    <Card tone={tone} style={styles.tile}>
+      <Icon name={icon} size={24} color={colors[tone]} />
+      <Text style={[styles.tileValue, { color: colors.text }]}>{value}</Text>
       <Text style={{ color: colors.textSecondary, ...tokens.typography.small }}>{label}</Text>
     </Card>
   );
@@ -163,18 +160,7 @@ function Tile({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   content: {
     padding: tokens.spacing.md,
-  },
-  segmented: {
-    flexDirection: 'row',
-    borderRadius: tokens.borderRadius.md,
-    padding: tokens.spacing.xs,
-    marginBottom: tokens.spacing.md,
-  },
-  segmentBtn: {
-    flex: 1,
-    paddingVertical: tokens.spacing.sm,
-    alignItems: 'center',
-    borderRadius: tokens.borderRadius.sm,
+    paddingBottom: tokens.spacing.xl,
   },
   tiles: {
     flexDirection: 'row',
@@ -182,15 +168,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   tile: {
-    width: '48%',
+    width: '48.5%',
+    gap: 2,
+  },
+  tileValue: {
+    ...tokens.typography.h3,
+    marginTop: tokens.spacing.xs,
   },
   title: {
     ...tokens.typography.body,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginBottom: tokens.spacing.sm,
   },
   track: {
-    height: 8,
+    height: 10,
     borderRadius: tokens.borderRadius.full,
     overflow: 'hidden',
     marginVertical: tokens.spacing.sm,

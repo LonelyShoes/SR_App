@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { useTheme } from '../../theme/ThemeProvider';
 import { tokens } from '../../theme/tokens';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
+import { Field } from '../../components/Form';
 import {
   SyncStatus,
   isLinkedToOtherAccount,
@@ -93,24 +94,22 @@ export function SyncSettingsCard() {
         <Text style={[styles.hint, { color: colors.textSecondary }]}>
           Opsional: masuk untuk menyinkronkan data antar perangkat. Tanpa akun, data tetap tersimpan di HP ini.
         </Text>
-        <TextInput
+        <Field
+          label="Email"
           value={formEmail}
           onChangeText={setFormEmail}
-          placeholder="Email"
-          placeholderTextColor={colors.textSecondary}
+          placeholder="nama@email.com"
           autoCapitalize="none"
           autoComplete="email"
           keyboardType="email-address"
-          style={[styles.input, { color: colors.text, borderColor: colors.border }]}
         />
-        <TextInput
+        <Field
+          label="Kata sandi"
           value={password}
           onChangeText={setPassword}
-          placeholder="Kata sandi (min. 6 karakter)"
-          placeholderTextColor={colors.textSecondary}
+          placeholder="Minimal 6 karakter"
           secureTextEntry
           autoComplete="password"
-          style={[styles.input, { color: colors.text, borderColor: colors.border }]}
         />
         {message && <Text style={[styles.hint, { color: colors.error }]}>{message}</Text>}
         <View style={styles.row}>
@@ -158,12 +157,6 @@ export function SyncSettingsCard() {
 }
 
 const styles = StyleSheet.create({
-  input: {
-    borderWidth: 1,
-    borderRadius: tokens.borderRadius.md,
-    padding: tokens.spacing.sm + tokens.spacing.xs,
-    marginBottom: tokens.spacing.sm,
-  },
   hint: {
     ...tokens.typography.caption,
     marginVertical: tokens.spacing.sm,

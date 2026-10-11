@@ -42,7 +42,13 @@ type Props = {
 /** Add/edit a meeting plan (spec 6.2 + per-meeting reminder offset from 6.6). */
 export function MeetingFormSheet({ visible, meeting, onClose }: Props) {
   return (
-    <Sheet visible={visible} onClose={onClose} title={meeting ? 'Edit Rapat' : 'Tambah Rapat'}>
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title={meeting ? 'Edit Rapat' : 'Tambah Rapat'}
+      icon="event"
+      subtitle="Pengingat dikirim sebelum rapat dimulai"
+    >
       {visible && <MeetingForm key={meeting?.id ?? 'new'} meeting={meeting ?? null} onDone={onClose} />}
     </Sheet>
   );
@@ -160,8 +166,8 @@ function MeetingForm({ meeting, onDone }: { meeting: Meeting | null; onDone: () 
       </Text>
       {error && <Text style={{ color: colors.error, marginBottom: tokens.spacing.sm }}>{error}</Text>}
       <View style={{ gap: tokens.spacing.sm }}>
-        <Button title="Simpan" onPress={save} />
-        {meeting && <Button title="Hapus rapat" variant="danger" onPress={remove} />}
+        <Button title="Simpan" icon="check" size="lg" onPress={save} />
+        {meeting && <Button title="Hapus rapat" icon="delete" variant="danger" onPress={remove} />}
       </View>
     </View>
   );

@@ -1,0 +1,7 @@
+{
+  "name": "sr-alarm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Alarm timer SR App: AlarmManager + notifikasi berdering terus + layar alarm di atas lock screen (Android).",
+  "main": "index.ts"
+}

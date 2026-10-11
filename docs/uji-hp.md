@@ -24,12 +24,18 @@ Ada dua APK di https://expo.dev/accounts/whitesr/projects/sr-app/builds :
 
 ## 2. Timer & alarm (paling penting)
 
-Pakai preset pendek: Timer → ✏️ Atur preset → durasi 1 menit (kembalikan ke 25 setelah selesai).
-- [ ] Layar menyala, app terbuka → alarm berbunyi seperti alarm, muncul di atas layar.
-- [ ] **Layar mati** → alarm tetap berbunyi tepat waktu.
-- [ ] App **ditutup/di-swipe** dari Recent → alarm tetap berbunyi.
+Sebelum mulai, buka Pengaturan → **Cek Kesehatan Alarm**. Semua butir harus **Aktif**; ketuk tombolnya bila ada yang "Perlu izin".
+Naikkan **volume alarm** HP, karena alarm memakai volume alarm, bukan volume notifikasi.
+
+Pakai preset pendek: Timer → **Atur preset** → durasi 1 menit (kembalikan ke 25 setelah selesai).
+- [ ] App terbuka → layar alarm muncul, nada alarm **berbunyi terus** sampai **Matikan Alarm** ditekan.
+- [ ] **Layar mati/terkunci** → layar menyala, layar alarm tampil di atas layar kunci, berbunyi terus.
+- [ ] App **di-swipe** dari Recent → alarm tetap berbunyi tepat waktu.
 - [ ] Mode **hemat daya** aktif → alarm tetap berbunyi.
-- [ ] Jeda → lanjut → berhenti bekerja; sesi muncul di Statistik.
+- [ ] Tombol **Matikan** di notifikasi menghentikan bunyi.
+- [ ] Dibiarkan → berhenti sendiri setelah ±3 menit.
+- [ ] **Jeda → lanjut → berhenti** → tidak ada alarm yang berbunyi; sesi muncul di Statistik.
+- [ ] Layar alarm di app → **Mulai Rehat** langsung memulai sesi rehat.
 - [ ] Widget "Mulai Fokus" memulai timer.
 
 ## 3. Pengingat rapat (H-30)
@@ -50,7 +56,9 @@ Pakai preset pendek: Timer → ✏️ Atur preset → durasi 1 menit (kembalikan
 - [ ] Buat notula dari rapat → peserta & agenda terisi otomatis.
 - [ ] Action item → **Jadikan tugas** → muncul di Matrix.
 - [ ] Tambah lampiran (foto/PDF) → buka → hapus.
-- [ ] **Ekspor & Bagikan PDF** → PDF terbuka rapi (selalu tema terang).
+- [ ] **Ekspor PDF → Bagikan** → share sheet muncul, PDF bernama `Notula <judul> <tanggal>.pdf` terbuka rapi (selalu tema terang).
+- [ ] **Ekspor PDF → Simpan ke folder** → pilih folder Download → file muncul di app Files.
+- [ ] Jika gagal: catat pesan error lengkapnya (termasuk kode dalam kurung).
 - [ ] Simpan notula → konfirmasi status rapat **selesai**.
 
 ## 5. Quick Plan suara

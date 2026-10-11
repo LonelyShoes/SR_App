@@ -1,12 +1,45 @@
 import React from 'react';
 import { View, StyleSheet, ViewProps } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
+import { tokens, elevation, Accent } from '../theme/tokens';
+import { Tap } from './Tap';
 
-export const Card = ({ style, children, ...props }: ViewProps) => {
+type CardProps = ViewProps & {
+  /** Makes the whole card tappable with press feedback */
+  onPress?: () => void;
+  onLongPress?: () => void;
+  /** Pastel tint instead of the plain surface */
+  tone?: Accent;
+  accessibilityLabel?: string;
+};
+
+/** Borderless rounded surface with a soft shadow. */
+export const Card = ({ style, children, onPress, onLongPress, tone, accessibilityLabel, ...props }: CardProps) => {
   const { colors } = useTheme();
+  const surface = [
+    styles.card,
+    { backgroundColor: tone ? colors[`${tone}Soft`] : colors.surface },
+    !tone && elevation(colors),
+    style,
+  ];
+
+  if (onPress || onLongPress) {
+    return (
+      <Tap
+        onPress={onPress}
+        onLongPress={onLongPress}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        style={surface}
+        {...props}
+      >
+        {children}
+      </Tap>
+    );
+  }
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }, style]} {...props}>
+    <View style={surface} accessibilityLabel={accessibilityLabel} {...props}>
       {children}
     </View>
   );
@@ -14,9 +47,8 @@ export const Card = ({ style, children, ...props }: ViewProps) => {
 
 const styles = StyleSheet.create({
   card: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 16,
+    padding: tokens.spacing.md,
+    borderRadius: tokens.borderRadius.lg,
+    marginBottom: tokens.spacing.sm + tokens.spacing.xs,
   },
 });
