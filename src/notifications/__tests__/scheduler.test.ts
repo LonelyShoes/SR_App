@@ -129,8 +129,8 @@ describe('reconcileMeetingReminders', () => {
   test('panggilan bersamaan tidak menghasilkan notifikasi ganda', async () => {
     mockMeetingRows = [meeting('a', 120), meeting('b', 180)];
     await Promise.all([reconcileMeetingReminders(), reconcileMeetingReminders(), reconcileMeetingReminders()]);
-    // Let the coalesced follow-up run finish
-    await reconcileMeetingReminders();
+    // Let the coalesced follow-up run finish (without starting a new one, which would hide duplicates)
+    await new Promise((resolve) => setTimeout(resolve, 20));
     expect(reminders()).toHaveLength(2);
   });
 
